@@ -10,6 +10,7 @@ import torch
 import math
 import warnings
 import torch.nn as nn
+import torch.nn.functional as F
 
 from einops import rearrange
 from timm.models.layers import to_2tuple

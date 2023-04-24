@@ -23,7 +23,6 @@ blocks_dict = {
 
 BN_MOMENTUM = 0.1
 
-
 class HighResolutionTransformerModule(nn.Module):
     def __init__(
         self,
@@ -327,7 +326,7 @@ class HighResolutionTransformerModule(nn.Module):
 
 
 class HighResolutionTransformer(nn.Module):
-    def __init__(self, cfg, num_classes=1000, **kwargs):
+    def __init__(self, cfg, **kwargs):
         super(HighResolutionTransformer, self).__init__()
 
         self.conv1 = nn.Conv2d(3, 64, kernel_size=3, stride=2, padding=1, bias=False)
@@ -391,62 +390,64 @@ class HighResolutionTransformer(nn.Module):
             drop_paths=dpr[depth_s2 + depth_s3 :],
         )
 
-        # Classification Head
-        self.incre_modules, self.downsamp_modules, self.final_layer = self._make_head(
-            pre_stage_channels
-        )
+        self.pre_stage_channels = pre_stage_channels
 
-        self.classifier = nn.Linear(2048, num_classes)
+#        # Classification Head
+#        self.incre_modules, self.downsamp_modules, self.final_layer = self._make_head(
+#            pre_stage_channels
+#        )
+#
+#        self.classifier = nn.Linear(2048, num_classes)
 
-    def _make_head(self, pre_stage_channels):
-        head_block = BottleneckDWP
-        head_channels = [32, 64, 128, 256]
-
-        # Increasing the #channels on each resolution
-        # from C, 2C, 4C, 8C to 128, 256, 512, 1024
-        incre_modules = []
-        for i, channels in enumerate(pre_stage_channels):
-            incre_module = self._make_layer(
-                head_block, channels, head_channels[i], 1, stride=1
-            )
-            incre_modules.append(incre_module)
-        incre_modules = nn.ModuleList(incre_modules)
-
-        # downsampling modules
-        downsamp_modules = []
-        for i in range(len(pre_stage_channels) - 1):
-            in_channels = head_channels[i] * head_block.expansion
-            out_channels = head_channels[i + 1] * head_block.expansion
-            downsamp_module = nn.Sequential(
-                nn.Conv2d(
-                    in_channels,
-                    in_channels,
-                    kernel_size=3,
-                    stride=2,
-                    padding=1,
-                    groups=in_channels,
-                ),
-                nn.BatchNorm2d(in_channels, momentum=BN_MOMENTUM),
-                nn.Conv2d(in_channels, out_channels, kernel_size=1, stride=1),
-                nn.BatchNorm2d(out_channels, momentum=BN_MOMENTUM),
-                nn.ReLU(inplace=True),
-            )
-            downsamp_modules.append(downsamp_module)
-        downsamp_modules = nn.ModuleList(downsamp_modules)
-
-        final_layer = nn.Sequential(
-            nn.Conv2d(
-                in_channels=head_channels[3] * head_block.expansion,
-                out_channels=2048,
-                kernel_size=1,
-                stride=1,
-                padding=0,
-            ),
-            nn.BatchNorm2d(2048, momentum=BN_MOMENTUM),
-            nn.ReLU(inplace=True),
-        )
-
-        return incre_modules, downsamp_modules, final_layer
+#    def _make_head(self, pre_stage_channels):
+#        head_block = BottleneckDWP
+#        head_channels = [32, 64, 128, 256]
+#
+#        # Increasing the #channels on each resolution
+#        # from C, 2C, 4C, 8C to 128, 256, 512, 1024
+#        incre_modules = []
+#        for i, channels in enumerate(pre_stage_channels):
+#            incre_module = self._make_layer(
+#                head_block, channels, head_channels[i], 1, stride=1
+#            )
+#            incre_modules.append(incre_module)
+#        incre_modules = nn.ModuleList(incre_modules)
+#
+#        # downsampling modules
+#        downsamp_modules = []
+#        for i in range(len(pre_stage_channels) - 1):
+#            in_channels = head_channels[i] * head_block.expansion
+#            out_channels = head_channels[i + 1] * head_block.expansion
+#            downsamp_module = nn.Sequential(
+#                nn.Conv2d(
+#                    in_channels,
+#                    in_channels,
+#                    kernel_size=3,
+#                    stride=2,
+#                    padding=1,
+#                    groups=in_channels,
+#                ),
+#                nn.BatchNorm2d(in_channels, momentum=BN_MOMENTUM),
+#                nn.Conv2d(in_channels, out_channels, kernel_size=1, stride=1),
+#                nn.BatchNorm2d(out_channels, momentum=BN_MOMENTUM),
+#                nn.ReLU(inplace=True),
+#            )
+#            downsamp_modules.append(downsamp_module)
+#        downsamp_modules = nn.ModuleList(downsamp_modules)
+#
+#        final_layer = nn.Sequential(
+#            nn.Conv2d(
+#                in_channels=head_channels[3] * head_block.expansion,
+#                out_channels=2048,
+#                kernel_size=1,
+#                stride=1,
+#                padding=0,
+#            ),
+#            nn.BatchNorm2d(2048, momentum=BN_MOMENTUM),
+#            nn.ReLU(inplace=True),
+#        )
+#
+#        return incre_modules, downsamp_modules, final_layer
 
     def _make_transition_layer(self, num_channels_pre_layer, num_channels_cur_layer):
         num_branches_cur = len(num_channels_cur_layer)
@@ -626,22 +627,23 @@ class HighResolutionTransformer(nn.Module):
                 x_list.append(y_list[i])
         y_list = self.stage4(x_list)
 
-        # Classification Head
-        y = self.incre_modules[0](y_list[0])
-        for i in range(len(self.downsamp_modules)):
-            y = self.incre_modules[i + 1](y_list[i + 1]) + self.downsamp_modules[i](y)
-
-        y = self.final_layer(y)
-        y = F.avg_pool2d(y, kernel_size=y.size()[2:]).view(y.size(0), -1)
-        y = self.classifier(y)
-
-        return y
+        return y_list
+#        # Classification Head
+#        y = self.incre_modules[0](y_list[0])
+#        for i in range(len(self.downsamp_modules)):
+#            y = self.incre_modules[i + 1](y_list[i + 1]) + self.downsamp_modules[i](y)
+#
+#        y = self.final_layer(y)
+#        y = F.avg_pool2d(y, kernel_size=y.size()[2:]).view(y.size(0), -1)
+#        y = self.classifier(y)
+#
+#        return y
 
     def init_weights(
         self,
         pretrained="",
     ):
-        logger.info("=> init weights from normal distribution")
+        #logger.info("=> init weights from normal distribution")
         for m in self.modules():
             if isinstance(m, nn.Conv2d):
                 nn.init.kaiming_normal_(m.weight, mode="fan_out", nonlinearity="relu")
@@ -650,12 +652,12 @@ class HighResolutionTransformer(nn.Module):
                 nn.init.constant_(m.bias, 0)
         if os.path.isfile(pretrained):
             pretrained_dict = torch.load(pretrained)
-            logger.info("=> loading pretrained model {}".format(pretrained))
+            #logger.info("=> loading pretrained model {}".format(pretrained))
             model_dict = self.state_dict()
             pretrained_dict = {
                 k: v for k, v in pretrained_dict.items() if k in model_dict.keys()
             }
-            for k, _ in pretrained_dict.items():
-                logger.info("=> loading {} pretrained model {}".format(k, pretrained))
+            #for k, _ in pretrained_dict.items():
+                #logger.info("=> loading {} pretrained model {}".format(k, pretrained))
             model_dict.update(pretrained_dict)
             self.load_state_dict(model_dict)

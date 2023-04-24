@@ -2,7 +2,7 @@
 # Copyright (c) 2021 Microsoft
 # Licensed under The MIT License [see LICENSE for details]
 # Modified by RainbowSecret from:
-#   https://github.com/facebookresearch/deit/blob/main/models.py
+#   https://github.com/facebookresearch/deit/blob/main/.py
 # --------------------------------------------------------
 
 import pdb

@@ -1,17 +1,15 @@
-import os
-import argparse
 import torch
-import torch.nn as nn
-import torch.nn.functional as F
 
-from model.net import net
+from model.net import Net
 
 def main():
-    print("ok")
-    n = net(False)
-    print("ok")
-    print(n(torch.random([10,10,10])))
-    print("ok")
+    n = Net(False)
+    #n.to('cuda')
+
+    img = torch.rand(1, 3, 640, 512)
+    img = n.forward(img)
+    for i in img:
+        print(i.shape)
 
 if __name__ == '__main__' :
     main()  
