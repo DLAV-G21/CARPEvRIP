@@ -654,8 +654,9 @@ class HighResolutionTransformer(nn.Module):
             pretrained_dict = torch.load(pretrained)
             #logger.info("=> loading pretrained model {}".format(pretrained))
             model_dict = self.state_dict()
+
             pretrained_dict = {
-                k: v for k, v in pretrained_dict.items() if k in model_dict.keys()
+                k[len('backbone.'):]: v for k, v in pretrained_dict['state_dict'].items() if k.startswith('backbone.') and (k[len('backbone.'):] in model_dict.keys())
             }
             #for k, _ in pretrained_dict.items():
                 #logger.info("=> loading {} pretrained model {}".format(k, pretrained))

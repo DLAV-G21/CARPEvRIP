@@ -7,147 +7,67 @@ import torch.nn.functional as F
 from .modules.bottleneck_block import Bottleneck, BottleneckDWP
 from .modules.transformer_block import GeneralTransformerBlock
 
-BN_MOMENTUM = 0.1
-MAX_CAR = 10
-
 class PointsTransformer(nn.Module):
     def __init__(
         self,
-        pre_stage_channels,
+        nbr_max_car,
         nbr_points,
-        nbr_variable
+        nbr_variable,
+        bn_momentum = 0.1,
     ):
         super(PointsTransformer, self).__init__()
 
+        self.nbr_max_car = nbr_max_car
         self.nbr_points = nbr_points
+        self.nbr_variable = nbr_variable
+        self.bn_momentum = bn_momentum
 
-        head_size = nbr_points + 1 + nbr_variable
+
+        head_size = 1024
+
+        self.rescale = nn.Sequential(
+            nn.Conv1d(
+                in_channels=320,
+                out_channels=nbr_points * nbr_max_car,
+                kernel_size=1
+            ),
+            nn.BatchNorm1d(nbr_points * nbr_max_car, momentum=bn_momentum),
+            nn.ReLU(inplace=True),
+        )
 
         self.queries = torch.nn.Parameter(torch.rand(
             1,
-            nbr_points * MAX_CAR,
-            head_size)
+            nbr_points * nbr_max_car,
+            head_size,
+        ))
+
+        decoder_layer = nn.TransformerDecoderLayer(d_model=head_size, nhead=1)
+        self.transformer_decoder = nn.TransformerDecoder(decoder_layer, num_layers=1)
+
+        self.final = nn.Conv1d(
+            in_channels=head_size,
+            out_channels=nbr_points + 1 + nbr_variable,
+            kernel_size=1
         )
         
-        decoder_layer = nn.TransformerDecoderLayer(d_model=head_size, nhead=head_size)
-        self.transformer_decoder = nn.TransformerDecoder(decoder_layer, num_layers=1)
-        
-        self.incre_modules, self.downsamp_modules = self._make_head(pre_stage_channels)
-
         self.softmax = nn.Softmax(dim=1)
-        
-    def _make_head(self, pre_stage_channels):
-        head_block = BottleneckDWP
-        head_channels = [32, 64, 128, 256]
-
-        # Increasing the #channels on each resolution
-        # from C, 2C, 4C, 8C to 128, 256, 512, 1024
-        incre_modules = []
-        for i, channels in enumerate(pre_stage_channels):
-            incre_module = self._make_layer(
-                head_block, channels, head_channels[i], 1, stride=1
-            )
-            incre_modules.append(incre_module)
-        incre_modules = nn.ModuleList(incre_modules)
-
-        # downsampling modules
-        downsamp_modules = []
-        for i in range(len(pre_stage_channels) - 1):
-            in_channels = head_channels[i] * head_block.expansion
-            out_channels = head_channels[i + 1] * head_block.expansion
-            downsamp_module = nn.Sequential(
-                nn.Conv2d(
-                    in_channels,
-                    in_channels,
-                    kernel_size=3,
-                    stride=2,
-                    padding=1,
-                    groups=in_channels,
-                ),
-                nn.BatchNorm2d(in_channels, momentum=BN_MOMENTUM),
-                nn.Conv2d(in_channels, out_channels, kernel_size=1, stride=1),
-                nn.BatchNorm2d(out_channels, momentum=BN_MOMENTUM),
-                nn.ReLU(inplace=True),
-            )
-            downsamp_modules.append(downsamp_module)
-        downsamp_modules = nn.ModuleList(downsamp_modules)
-
-        return incre_modules, downsamp_modules
-    
-    def _make_layer(
-        self,
-        block,
-        inplanes,
-        planes,
-        blocks,
-        input_resolution=None,
-        num_heads=1,
-        stride=1,
-        window_size=7,
-        halo_size=1,
-        mlp_ratio=4.0,
-        q_dilation=1,
-        kv_dilation=1,
-        sr_ratio=1,
-        attn_type="msw",
-    ):
-        downsample = None
-        if stride != 1 or inplanes != planes * block.expansion:
-            downsample = nn.Sequential(
-                nn.Conv2d(
-                    inplanes,
-                    planes * block.expansion,
-                    kernel_size=1,
-                    stride=stride,
-                    bias=False,
-                ),
-                nn.BatchNorm2d(planes * block.expansion, momentum=BN_MOMENTUM),
-            )
-        layers = []
-
-        if isinstance(block, GeneralTransformerBlock):
-            layers.append(
-                block(
-                    inplanes,
-                    planes,
-                    num_heads,
-                    window_size,
-                    halo_size,
-                    mlp_ratio,
-                    q_dilation,
-                    kv_dilation,
-                    sr_ratio,
-                    attn_type,
-                )
-            )
-        else:
-            layers.append(block(inplanes, planes, stride, downsample))
-
-        inplanes = planes * block.expansion
-        for i in range(1, blocks):
-            layers.append(block(inplanes, planes))
-
-        return nn.Sequential(*layers)
 
     def forward(self, x):
+        queries = self.queries.expand(x.shape[0], *self.queries.shape[1:3])
+        x = x.view(*x.shape[0:2],-1)
+        x = x.permute(0,2,1)
+        x = self.rescale(x)
 
-        y = self.incre_modules[0](x[0])
-        for i in range(len(self.downsamp_modules)):
-            y = self.incre_modules[i + 1](x[i + 1]) + self.downsamp_modules[i](y)
+        x = self.transformer_decoder(queries, x)
 
-        
-        queries = self.queries.expand(y.shape[0], *self.queries.shape[1:3])
-        y = y.view(*y.shape[0:2],-1)
-        
-        print('y',y.shape)
-        print('queries',queries.shape)
-        y = self.transformer_decoder(queries, y)
+        x = x.permute(0,2,1)
+        x = self.final(x)
+        x = x.permute(0,2,1)
 
-        print(y.shape)
-        # y[:,:,:(self.nbr_points+1)] = 
-        #     self.softmax(y[:,:,:(self.nbr_points+1)])
+        x[:,:,self.nbr_variable:] = \
+            self.softmax(x[:,:,self.nbr_variable:])
         
-        return y
+        return x
         
 
         
