@@ -34,12 +34,10 @@ class ApolloDataset(Dataset):
     self.image_size = tuple(config['dataset']['input_size'])
     self.max_nb_car = config['dataset']['max_nb']
     self.nb_links = len(CAR_SKELETON_24) if config['dataset']['nb_keypoints'] == 24 else len(CAR_SKELETON_66)
-    print(self.nb_links)
     self.nb_keypoints = config['dataset']['nb_keypoints']
     self.list_links = CAR_SKELETON_24 if config['dataset']['nb_keypoints'] == 24 else CAR_SKELETON_66
     
   def load_data(self, file, data_list):
-    print(file)
     if os.path.exists(file):
       with open(file, 'r') as f:
         data_file = json.load(f)
@@ -110,13 +108,9 @@ class ApolloDataset(Dataset):
   def find_link_among_keypoints(self, kps,labels,nb_car):
     lst_links = self.list_links
     lst = torch.ones((self.max_nb_car, self.nb_links, 5))*(-1)
-    print(labels)
     for i in range(nb_car):
-      print(len(labels))
-      print(lst_links)
       label_car =[int(j.split('-')[1]) for j in labels if int(j.split('-')[0])==i]
       cpt = 0
-      print(label_car)
       for cls, (a,b) in enumerate(lst_links):
         if a in label_car and b in label_car:
           idx1 = label_car.index(a)
@@ -125,8 +119,6 @@ class ApolloDataset(Dataset):
           pt20, pt21 = kps[idx2]
           lst[i,cpt,:] = torch.Tensor([cls, pt10, pt11, pt20, pt21])
           cpt+=1
-          print(cls)
-      print('========')
 
     return lst 
 
@@ -152,11 +144,11 @@ class ApolloDataset(Dataset):
     list_transform = [al.augmentations.geometric.resize.Resize(height=self.image_size[1], width=self.image_size[0],interpolation=cv2.INTER_CUBIC,always_apply=True, p=1.0)]
     if self.apply_augm:
       list_transform.extend([
-          al.HorizontalFlip(p=0.5),
-          al.ColorJitter(0.4, 0.4, 0.5, 0.2, p=0.6),
-          al.ToGray(p=0.01),
-          al.JpegCompression(50, 80,p=0.1),
-          al.GaussNoise(var_limit=(1.0,30.0), p=0.2)
+        al.HorizontalFlip(p=0.5),
+        al.ColorJitter(0.4, 0.4, 0.5, 0.2, p=0.6),
+        al.ToGray(p=0.01),
+        al.JpegCompression(50, 80,p=0.1),
+        al.GaussNoise(var_limit=(1.0,30.0), p=0.2)
       ])
 
       if self.use_occlusion_data_augm:

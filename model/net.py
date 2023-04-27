@@ -17,7 +17,7 @@ class Net(nn.Module):
         self.keypoints = self.Load_Keypoints(config)
         self.links = self.Load_Links(config)
         self.init_weights(config['model']['pretrained'])
-        if  not config['training']['train_backbone']:
+        if not config['training']['train_backbone']:
             for param in  self.backbone.parameters():
                 param.require_grad = False
         
@@ -107,10 +107,23 @@ class Net(nn.Module):
         )
 
     def forward(self, x):
+        self.backbone.init_weights("hrt_small_coco_384x288.pth")
         x = self.backbone(x)
         x = self.neck(x)
         y = self.keypoints(x)
         z = self.links(x)
+        return [y, z]
+
+    def forward_print(self, x):
+        print('0', x)
+        x = self.backbone(x)
+        print('1', x)
+        x = self.neck(x)
+        print('2', x)
+        y = self.keypoints(x)
+        print('3', y)
+        z = self.links(x)
+        print('4', z)
         return [y, z]
     
     def init_weights(

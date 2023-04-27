@@ -12,7 +12,7 @@ def get_optimizer_from_arguments(config: dict, params: Iterable[nn.Parameter]) -
     :param params: the model parameters to be optimized by the optimizers
     :return: the correctly set optimizer.
     """
-    optim_config = config['optimizer']
+    optim_config = config['training']['optimizer']
     optim_name = optim_config["name"].lower()
     if optim_name == "sgd":
         optimizer = optim.SGD(params,
@@ -49,7 +49,7 @@ def get_lr_scheduler_from_arguments(config: dict, optimizer: optim.Optimizer): \
     :param optimizer: the optimizer to be wrapped up in the learning rate scheduler
     :return: the learning rate scheduler
     """
-    scheduler_config = config['lr_scheduler']
+    scheduler_config = config['training']['lr_scheduler']
 
     # get the scheduler name
     scheduler_name = scheduler_config["name"].lower()
@@ -94,23 +94,11 @@ def get_accelerator_device_from_args(config: dict): \
     hardware_config = config['hardware']
 
     # Choose the specific GPUs or the number of them to where we have to train the model
-    if torch.cuda.is_available():
-        print("Cuda is available => Use GPU")
-        if hardware_config["specific_gpu"] is not None:
-            # If we need to use a specific GPU, instead of all of them
-            device = [int(hardware_config["specific_gpu"])]
-        elif hardware_config["num_gpu"] >= 1:
-            # If simply need to use multiple GPUs
-            device = hardware_config["num_gpu"]
-        else:
-            # otherwise, we set in automatic
-            device = "auto"
+    if torch.cuda.is_available() and hardware_config['use_cuda']:
+        # Use cuda
+        device = "cuda:0"
     else:
         # Use cpu instead of GPU
-        print("Cuda not available, use CPU.")
-        device = "auto"
+        device = "cpu"
 
-    # Accelerator will become GPU if it is available and required
-    accelerator = "gpu" if hardware_config["num_gpu"] >= 1 and torch.cuda.is_available() else "cpu"
-
-    return accelerator, device
+    return device

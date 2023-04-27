@@ -27,7 +27,7 @@ class PointsTransformer(nn.Module):
 
         self.rescale = nn.Sequential(
             nn.Conv1d(
-                in_channels=320,
+                in_channels=300,
                 out_channels=nbr_points * nbr_max_car,
                 kernel_size=1
             ),

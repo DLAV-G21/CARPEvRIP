@@ -60,8 +60,11 @@ class LossLinks(nn.Module):
         
         filter = self.get_class_from_target(targeted_keypoints).view(targeted_keypoints.shape[:3]) > 0
 
+        sum_ = torch.sum(filter, dim=2).unsqueeze(2)
+        sum_[sum_ < 1] = 1
+
         OKS_loss = torch.sum(nb_cars) - torch.sum(
-            torch.exp(- distance.view(targeted_keypoints.shape[:3]) / scale.unsqueeze(2)**2 ) * filter / torch.sum(filter, dim=2).unsqueeze(2)
+            torch.exp(- distance.view(targeted_keypoints.shape[:3]) / scale.unsqueeze(2)**2 ) * filter / sum_
         )
 
         target_class = self.get_class_from_target(targeted_keypoints)

@@ -1,0 +1,79 @@
+{
+	"training_name": "inv_mask",
+	"model": {
+		"pretrained": true,
+		"bn_momentum": 0.1
+	},
+	"dataset": {
+		"data_path": "dlav_data",
+		"segm_path": "segm_npy",
+		"img_path": "image_npy",
+		"seed": 42,
+		"nb_keypoints": 24,
+		"nb_links": 49,
+		"max_nb": 49,
+		"annotations_folder": "annotations",
+		"train_ratio": 0.85,
+		"input_size": [640, 480]
+	},
+	"hardware": {
+		"use_cuda" : true,
+		"num_gpu": 1,
+		"specific_gpu": 1,
+		"num_workers": 1
+	},
+	"training": {
+		"batch_size": 4,
+		"train_backbone": false,
+		"clip_grad_value": 0.01,
+		"max_epochs": 100,
+		"loss_keypoints": {
+			"cost_class": 1,
+			"cost_bbox": 1
+		},
+		"loss_links": {
+			"cost_class": 1,
+			"cost_bbox": 1
+		},
+		"optimizer": {
+			"name": "adamw",
+			"learning_rate": 0.01,
+			"betas": [0.9, 0.999],
+			"weight_decay": 0
+		},
+		"lr_scheduler": {
+			"name": "multistep",
+			"decay_factor": 0.5,
+			"milestones": [
+				2,
+				5,
+				7,
+				10,
+				12,
+				15,
+				20,
+				25,
+				30
+			],
+			"mode": "max",
+			"patience": 2,
+			"nb_step": 1
+		}
+	},
+	"data_augmentation": {
+		"use_occlusion_data_augm": false,
+		"prob_occlusion": 0.1,
+		"prob_blur": 0.1,
+		"blur_radius": 30,
+		"nb_blur_source": 10,
+		"apply_augm": false,
+		"normalize": {
+			"mean": [0.485, 0.456, 0.406],
+			"std": [0.229, 0.224, 0.225]
+		}
+	},
+	"logging": {
+		"log_dir": "log_dir",
+		"weight_dir": "model_saves"
+	}
+}

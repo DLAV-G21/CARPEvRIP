@@ -62,7 +62,6 @@ SKELETON_ORIG = [
     (48, 49), (50, 57), (48, 57), (48, 50)
 ]
 
-
 KPS_MAPPING = [49, 8, 57, 0, 52, 5, 11, 7, 20, 23, 24, 33, 25, 32, 28,
                29, 46, 34, 37, 50, 65, 64, 9, 48]
 
@@ -135,7 +134,6 @@ CAR_KEYPOINTS_66 = [
     "top_right_c_rear_lplate",              # 63
     "bottom_right_c_rear_lplate",           # 64
     "bottom_left_c_rear_lplate", ]            # 65
-
 
 HFLIP_ids = {
     0: 57,
