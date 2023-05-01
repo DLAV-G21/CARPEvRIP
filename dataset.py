@@ -139,16 +139,26 @@ class ApolloDataset(Dataset):
   def __getitem__(self, index):
     cur_name, keypoints, scales, nb_car = self.dataset[index]  
     scale = torch.Tensor(scales+[-1]*(self.max_nb_car-nb_car))
-    img = np.load(os.path.join(self.img_path, cur_name))
+    img = np.load(os.path.join(self.img_path, cur_name))["arr_0"]
 
     list_transform = [al.augmentations.geometric.resize.Resize(height=self.image_size[1], width=self.image_size[0],interpolation=cv2.INTER_CUBIC,always_apply=True, p=1.0)]
     if self.apply_augm:
 
       if self.use_occlusion_data_augm:
         if random.random() < self.prob_mask:
-          pass
+          RECT_SIZE = 16
+          MAX_RECT = 11
+          nb_mask = random.randint(MAX_RECT)
+          fill_value = np.array([128, 128, 128])
+
+          indices_hor = random.choices(list(range(0, self.input_size[0]//RECT_SIZE)),k=nb_mask)
+          indices_ver = random.choices(list(range(0, self.input_size[1]//RECT_SIZE)),k=nb_mask)
+
+          for i, j in zip(indices_hor, indices_ver):
+            img[i*RECT_SIZE:(i+1)*RECT_SIZE, j*RECT_SIZE:(j+1)*RECT_SIZE] = fill_value
+        
         if random.random() < self.prob_blur:
-          segm = np.load(os.path.join(self.segm_path, cur_name))
+          segm = np.load(os.path.join(self.segm_path, cur_name))["arr_0"]
           if random.random() < 0.5:
             # Blur the cars
             segm = segm.astype(np.uint8)
