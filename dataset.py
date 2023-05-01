@@ -2,7 +2,6 @@ import albumentations as al
 from torch.utils.data import Dataset, DataLoader
 import random
 import torch
-import matplotlib.pyplot as plt
 from albumentations.pytorch.transforms import ToTensorV2
 import random
 import cv2
@@ -18,6 +17,7 @@ class ApolloDataset(Dataset):
     self.config = config
     seed = config['dataset']['seed']
     random.seed(seed)
+    self.SCALE_SINGLE_KP = 1e-8
 
     correct_file = 'apollo_keypoints_'+str(config['dataset']['nb_keypoints'])+'_'+('train' if is_training else 'val')+'.json'
     self.dataset = self.load_data(os.path.join(root_path, config['dataset']['annotations_folder'],correct_file), data_list)
@@ -76,7 +76,10 @@ class ApolloDataset(Dataset):
               kps_car.append((cls,x,y))
           if len(kps_car)>0:
             kps.append(kps_car)
-            scales.append(ls['area']/(3384*2710))
+            if len(kps_car)==1:
+              scales.append(self.SCALE_SINGLE_KP)
+            else:
+              scales.append(ls['area']/(3384*2710))
       nb=len(kps)
       name = names[im_id]
       if nb > 0:
@@ -87,7 +90,6 @@ class ApolloDataset(Dataset):
 
   def __len__(self):
     return len(self.dataset)
-
 
   def get_source_in_mask(self, mask):
     sources = []
@@ -134,22 +136,13 @@ class ApolloDataset(Dataset):
           cpt +=1
     return keypoints 
 
-
   def __getitem__(self, index):
     cur_name, keypoints, scales, nb_car = self.dataset[index]  
     scale = torch.Tensor(scales+[-1]*(self.max_nb_car-nb_car))
     img = np.load(os.path.join(self.img_path, cur_name))
-    plt.show()
 
     list_transform = [al.augmentations.geometric.resize.Resize(height=self.image_size[1], width=self.image_size[0],interpolation=cv2.INTER_CUBIC,always_apply=True, p=1.0)]
     if self.apply_augm:
-      list_transform.extend([
-        al.HorizontalFlip(p=0.5),
-        al.ColorJitter(0.4, 0.4, 0.5, 0.2, p=0.6),
-        al.ToGray(p=0.01),
-        al.JpegCompression(50, 80,p=0.1),
-        al.GaussNoise(var_limit=(1.0,30.0), p=0.2)
-      ])
 
       if self.use_occlusion_data_augm:
         if random.random() < self.prob_mask:
@@ -163,7 +156,14 @@ class ApolloDataset(Dataset):
             # blur the background
             segm = (segm==0).astype(np.uint8)
           img = self.generate_image_segmentation(img, segm)
-          
+      
+      list_transform.extend([
+        al.HorizontalFlip(p=0.5),
+        al.ColorJitter(0.4, 0.4, 0.5, 0.2, p=0.6),
+        al.ToGray(p=0.01),
+        al.JpegCompression(50, 80,p=0.1),
+        al.GaussNoise(var_limit=(1.0,30.0), p=0.2)
+      ])
         
     list_transform.append(al.Normalize(mean=self.mean, std=self.std))
     list_transform.append(ToTensorV2())
@@ -186,7 +186,7 @@ class ApolloDataset(Dataset):
     links = self.find_link_among_keypoints(transformed_keypoints, transformed_class_labels, nb_car)
     keypoints = self.keypoints_list_to_tensor(transformed_keypoints, transformed_class_labels, nb_car)
 
-    return transformed_image, keypoints, scale, links, torch.Tensor([nb_car]).int()
+    return cur_name, transformed_image, keypoints, scale, links, torch.Tensor([nb_car]).int()
 
 def get_dataloaders(config, data_path):
   train_data_list, val_data_list, test_data_list = generate_train_val_test_split(config, data_path)
@@ -195,8 +195,8 @@ def get_dataloaders(config, data_path):
   val_dataset =  ApolloDataset(val_data_list, config, data_path, is_training =True)
   test_dataset =  ApolloDataset(test_data_list, config, data_path, is_training =False)
 
-  train_loader = DataLoader(train_dataset, batch_size=config['training']['batch_size'], num_workers=config['hardware']['num_workers'],shuffle=True)
-  val_loader = DataLoader(val_dataset, batch_size=config['training']['batch_size'], num_workers=config['hardware']['num_workers'],shuffle=True)
-  test_loader = DataLoader(test_dataset, batch_size=config['training']['batch_size'],num_workers=config['hardware']['num_workers'],shuffle=False)
+  train_loader = DataLoader(train_dataset, batch_size=config['training']['batch_size'], num_workers=config['hardware']['num_workers'],shuffle=config['dataset']['shuffle'])
+  val_loader = DataLoader(val_dataset, batch_size=config['training']['batch_size'], num_workers=config['hardware']['num_workers'],shuffle=config['dataset']['shuffle'])
+  test_loader = DataLoader(test_dataset, batch_size=config['training']['batch_size'],num_workers=config['hardware']['num_workers'],shuffle=config['dataset']['shuffle'])
   
   return train_loader, val_loader, test_loader

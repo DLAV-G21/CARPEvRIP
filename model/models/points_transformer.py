@@ -63,9 +63,6 @@ class PointsTransformer(nn.Module):
         x = x.permute(0,2,1)
         x = self.final(x)
         x = x.permute(0,2,1)
-
-        x[:,:,self.nbr_variable:] = \
-            self.softmax(x[:,:,self.nbr_variable:])
         
         return x
         

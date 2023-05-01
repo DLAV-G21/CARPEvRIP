@@ -6,6 +6,7 @@ import torch.nn.functional as F
 from .models.hrt import HighResolutionTransformer
 from .models.points_transformer import PointsTransformer
 from .models.neck import Neck
+from .models.decoder import Decoder
 
 class Net(nn.Module):
     
@@ -16,10 +17,10 @@ class Net(nn.Module):
         self.neck = self.Load_Neck(self.backbone.pre_stage_channels)
         self.keypoints = self.Load_Keypoints(config)
         self.links = self.Load_Links(config)
+        self.links = self.Load_Links(config)
+        self.decoder = self.Load_Decoder(config)
         self.init_weights(config['model']['pretrained'])
-        if not config['training']['train_backbone']:
-            for param in  self.backbone.parameters():
-                param.require_grad = False
+        self.train_backbone = config['training']['train_backbone']
         
     def Load_Backbones(self):
         cfg = dict(
@@ -106,25 +107,23 @@ class Net(nn.Module):
             bn_momentum = config['model']['bn_momentum'],
         )
 
-    def forward(self, x):
-        self.backbone.init_weights("hrt_small_coco_384x288.pth")
-        x = self.backbone(x)
-        x = self.neck(x)
-        y = self.keypoints(x)
-        z = self.links(x)
-        return [y, z]
+    def Load_Decoder(self, config):
+        return Decoder(
 
-    def forward_print(self, x):
-        print('0', x)
-        x = self.backbone(x)
-        print('1', x)
+        )
+
+    def forward(self, x):
+        if(self.train_backbone):
+            x = self.backbone(x)
+        else:
+            self.backbone.init_weights("hrt_small_coco_384x288.pth")
+            with torch.no_grad():
+                x = self.backbone(x)
         x = self.neck(x)
-        print('2', x)
         y = self.keypoints(x)
-        print('3', y)
         z = self.links(x)
-        print('4', z)
-        return [y, z]
+        x = self.decoder((y, z))
+        return x
     
     def init_weights(
         self,

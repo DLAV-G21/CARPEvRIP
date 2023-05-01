@@ -53,7 +53,7 @@ class Trainer():
     def train_step(self, train_data, writer, epoch_):
         self.model.train()
         epoch_len = len(train_data)
-        for i, (image, targeted_keypoints, scale, targeted_links, nb_cars) in tqdm(enumerate(train_data)):
+        for i, (name, image, targeted_keypoints, scale, targeted_links, nb_cars) in tqdm(enumerate(train_data)):
             if(self.device != 'cpu'):
                 image = image.to(self.device, non_blocking=True)
                 targeted_keypoints = targeted_keypoints.to(self.device, non_blocking=True)
@@ -67,15 +67,23 @@ class Trainer():
             predicted_keypoints, predicted_links = self.model(image)
 
             try:
-              # compute loss
-              loss_keypoints = self.loss_keypoints(predicted_keypoints, targeted_keypoints, scale, nb_cars)
-              loss_links = self.loss_links(predicted_links, targeted_links, scale, nb_cars)
-              loss = loss_keypoints + loss_links 
-              loss.backward()
+                # compute loss
+                loss_keypoints = self.loss_keypoints(predicted_keypoints, targeted_keypoints, scale, nb_cars)
+                loss_links = self.loss_links(predicted_links, targeted_links, scale, nb_cars)
+                loss = loss_keypoints + loss_links 
+                loss.backward()
             except :
-              self.model.forward_print(image)
-              raise True
-
+                print()
+                print('add to skip :', i-1)
+                print()
+                print(loss_keypoints)
+                print(loss_links)
+                print(loss)
+                print()
+                print(self.model.neck.state_dict())
+                print(self.model.keypoints.state_dict())
+                print(self.model.links.state_dict())
+                raise True
 
             # update model
             torch.nn.utils.clip_grad_value_(self.model.parameters(), self.clip_grad_value)
@@ -84,4 +92,3 @@ class Trainer():
             writer.add_scalar('loss_keypoints', loss_keypoints, epoch_ * epoch_len + i)
             writer.add_scalar('loss_links', loss_links, epoch_ * epoch_len + i)
             writer.add_scalar('loss', loss, epoch_ * epoch_len + i)
-

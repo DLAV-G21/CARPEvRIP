@@ -9,6 +9,7 @@
 		"segm_path": "segm_npy",
 		"img_path": "image_npy",
 		"seed": 42,
+		"shuffle": false,
 		"nb_keypoints": 24,
 		"nb_links": 49,
 		"max_nb": 49,
@@ -23,7 +24,7 @@
 		"num_workers": 1
 	},
 	"training": {
-		"batch_size": 4,
+		"batch_size": 1,
 		"train_backbone": false,
 		"clip_grad_value": 0.01,
 		"max_epochs": 100,
@@ -37,9 +38,9 @@
 		},
 		"optimizer": {
 			"name": "adamw",
-			"learning_rate": 0.01,
+			"learning_rate": 1e-15,
 			"betas": [0.9, 0.999],
-			"weight_decay": 0
+			"weight_decay": 1e-15
 		},
 		"lr_scheduler": {
 			"name": "multistep",
