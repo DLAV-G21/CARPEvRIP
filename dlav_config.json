@@ -2,7 +2,12 @@
 	"training_name": "inv_mask",
 	"model": {
 		"pretrained": true,
-		"bn_momentum": 0.1
+		"bn_momentum": 0.1,
+		"decode_output": false
+	},
+	"decoder":{
+		"threshold" : 0.5,
+		"min_distance" : 100 
 	},
 	"dataset": {
 		"data_path": "dlav_data",

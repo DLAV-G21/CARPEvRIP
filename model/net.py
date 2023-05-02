@@ -1,12 +1,11 @@
 import os
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 
 from .models.hrt import HighResolutionTransformer
 from .models.points_transformer import PointsTransformer
 from .models.neck import Neck
-from .models.decoder import Decoder
+from .decoder import Decoder
 
 class Net(nn.Module):
     
@@ -18,7 +17,10 @@ class Net(nn.Module):
         self.keypoints = self.Load_Keypoints(config)
         self.links = self.Load_Links(config)
         self.links = self.Load_Links(config)
-        self.decoder = self.Load_Decoder(config)
+        if(config['model']['decode_output']):
+            self.decoder = self.Load_Decoder(config)
+        else:
+            self.decoder = None
         self.init_weights(config['model']['pretrained'])
         self.train_backbone = config['training']['train_backbone']
         
@@ -109,7 +111,8 @@ class Net(nn.Module):
 
     def Load_Decoder(self, config):
         return Decoder(
-
+            config['decoder']['threshold'],
+            config['decoder']['min_distance']
         )
 
     def forward(self, x):
@@ -122,8 +125,9 @@ class Net(nn.Module):
         x = self.neck(x)
         y = self.keypoints(x)
         z = self.links(x)
-        x = self.decoder((y, z))
-        return x
+        if(self.decoder is not None and not self.training):
+            return self.decoder((y, z))
+        return (y, z)
     
     def init_weights(
         self,

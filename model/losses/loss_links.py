@@ -42,6 +42,7 @@ class LossLinks(nn.Module):
         return keypoint[:,:,:,0].flatten(1, 2)
     
     def compute_distance(self, predicted_keypoints, targeted_keypoints):
+        #TODO
         return torch.sqrt(
                 torch.sum((
                     self.get_position_from_output(predicted_keypoints) - 

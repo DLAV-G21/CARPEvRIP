@@ -37,7 +37,7 @@ class Trainer():
         for epoch_ in range(self.model.epoch, self.model.epoch + epoch):
             self.train_step(train_data, writer, epoch_)
             self.model.epoch = epoch_
-            torch.save(self.model.state_dict(), os.path.join(PATH, 'model_' + epoch + '.pth'))
+            torch.save(self.model.state_dict(), os.path.join(PATH, 'model_' + str(epoch) + '.pth'))
             # result = self.eval_step(eval_data)
             # if(self.model.best_result < result):
             #     torch.save(self.model.state_dict(), PATH + '_best_result.pth')
