@@ -10,6 +10,82 @@ from utils.processing import generate_train_val_test_split
 from utils.openpifpaf_helper import *
 import os
 import json
+from pycocotools.coco import COCO
+from PIL import Image
+
+
+class ApolloEvalDataset(Dataset):
+  def __init__(self, data_list, config, root_path, is_val):
+    correct_file = 'apollo_keypoints_'+str(config['dataset']['nb_keypoints'])+'_'+('train' if is_val else 'val')+'.json'
+    self.img_path = os.path.join(root_path,config['dataset']['img_path'])
+    self.segm_path = os.path.join(root_path,config['dataset']['segm_path'])
+    self.mean = config['data_augmentation']['normalize']['mean']
+    self.std = config['data_augmentation']['normalize']['std']
+    self.image_size = tuple(config['dataset']['input_size'])
+    self.width_ratio = self.image_size[0]/3384
+    self.height_ratio = self.image_size[1]/2710
+    self.dataset, self.annotation_file = self.load_data(os.path.join(root_path, config['dataset']['annotations_folder'],correct_file), data_list)
+    coco_path = os.path.join(root_path,"coco_val.json" if is_val else "coco_test.json")
+    with open(coco_path, 'w') as f:
+      json.dump(self.annotation_file,f)
+    
+    self.coco = COCO(coco_path)
+
+  def load_data(self, file, data_list):
+    if os.path.exists(file):
+      with open(file, 'r') as f:
+        data_file = json.load(f)
+    else:
+      raise ValueError('The given config file doesn\'t exist')
+
+    dataset = []
+    coco_annotations = {}
+    coco_annotations["images"] = []
+    coco_annotations["annotations"] = []
+    coco_annotations["categories"] = data_file["categories"].copy()
+    coco_annotations["info"] =  data_file["info"].copy()
+
+    for dico in data_file["images"]:
+      im_id = dico["id"]
+      if dico["file_name"] in data_list:
+        coco_annotations["images"].append(dico)
+        cur_annotations = []
+        for dico_2 in data_file["annotations"]:
+          dico_copy = dico_2.copy()
+          if dico_2['image_id'] == im_id and dico_2["iscrowd"]==0:
+            keypoints = []
+            for i in range(24):
+              x,y,z = tuple(dico_2['keypoints'][i*3:(i+1)*3])
+              x *= self.width_ratio
+              y *= self.height_ratio
+              keypoints.extend([x,y,z])
+
+            # box is in   (x, y, w, h)
+            dico_copy["bbox"] = [dico_copy["bbox"][0]*self.width_ratio, dico_copy["bbox"][1]*self.height_ratio,dico_copy["bbox"][2]*self.width_ratio, dico_copy["bbox"][3]*self.height_ratio ]
+            dico_copy["keypoints"] = keypoints
+            cur_annotations.append(dico_copy)
+              
+        dataset.append((cur_annotations, dico.copy()))  
+        coco_annotations["annotations"].extend(cur_annotations)
+
+    return dataset, coco_annotations
+  
+  def __getitem__(self, idx):
+    img_name = self.dataset[idx][1]["file_name"]
+    ds_annot = self.dataset[idx]
+    img = np.array(Image.open(os.path.join(self.img_path, img_name)))
+    list_transform = [al.augmentations.geometric.resize.Resize(height=self.image_size[1], width=self.image_size[0],interpolation=cv2.INTER_CUBIC,always_apply=True, p=1.0)]
+    list_transform.append(al.Normalize(mean=self.mean, std=self.std))
+    list_transform.append(ToTensorV2())
+
+    composition = al.Compose(list_transform)
+    transformed = composition(image=img)
+    transformed_image = transformed['image']
+    
+
+    return transformed_image, ds_annot[idx][0]["id"], ds_annot
+
+
 
 class ApolloDataset(Dataset):
   def __init__(self, data_list, config, root_path, is_training =True):
@@ -92,7 +168,6 @@ class ApolloDataset(Dataset):
     return len(self.dataset)
 
   def get_source_in_mask(self, mask):
-    sources = []
     coordinates = np.transpose((mask==1).nonzero())
     samples = random.sample(np.arange(len(coordinates)), k=self.nb_blur_source)
     return coordinates[samples,:]
@@ -139,7 +214,7 @@ class ApolloDataset(Dataset):
   def __getitem__(self, index):
     cur_name, keypoints, scales, nb_car = self.dataset[index]  
     scale = torch.Tensor(scales+[-1]*(self.max_nb_car-nb_car))
-    img = np.load(os.path.join(self.img_path, cur_name))["arr_0"]
+    img = np.array(Image.open(os.path.join(self.img_path,cur_name)))
 
     list_transform = [al.augmentations.geometric.resize.Resize(height=self.image_size[1], width=self.image_size[0],interpolation=cv2.INTER_CUBIC,always_apply=True, p=1.0)]
     if self.apply_augm:
@@ -158,7 +233,7 @@ class ApolloDataset(Dataset):
             img[i*RECT_SIZE:(i+1)*RECT_SIZE, j*RECT_SIZE:(j+1)*RECT_SIZE] = fill_value
         
         if random.random() < self.prob_blur:
-          segm = np.load(os.path.join(self.segm_path, cur_name))["arr_0"]
+          segm = np.load(os.path.join(self.segm_path, cur_name+".npz"))["arr_0"]
           if random.random() < 0.5:
             # Blur the cars
             segm = segm.astype(np.uint8)
@@ -202,11 +277,11 @@ def get_dataloaders(config, data_path):
   train_data_list, val_data_list, test_data_list = generate_train_val_test_split(config, data_path)
 
   train_dataset = ApolloDataset(train_data_list, config, data_path, is_training =True)
-  val_dataset =  ApolloDataset(val_data_list, config, data_path, is_training =True)
-  test_dataset =  ApolloDataset(test_data_list, config, data_path, is_training =False)
+  val_dataset =  ApolloEvalDataset(val_data_list, config, data_path, is_val =True)
+  test_dataset =  ApolloEvalDataset(test_data_list, config, data_path, is_val =False)
 
   train_loader = DataLoader(train_dataset, batch_size=config['training']['batch_size'], num_workers=config['hardware']['num_workers'],shuffle=config['dataset']['shuffle'])
-  val_loader = DataLoader(val_dataset, batch_size=config['training']['batch_size'], num_workers=config['hardware']['num_workers'],shuffle=config['dataset']['shuffle'])
-  test_loader = DataLoader(test_dataset, batch_size=config['training']['batch_size'],num_workers=config['hardware']['num_workers'],shuffle=config['dataset']['shuffle'])
+  val_loader = DataLoader(val_dataset, batch_size=config['training']['batch_size'], num_workers=config['hardware']['num_workers'],shuffle=False)
+  test_loader = DataLoader(test_dataset, batch_size=config['training']['batch_size'],num_workers=config['hardware']['num_workers'],shuffle=False)
   
   return train_loader, val_loader, test_loader

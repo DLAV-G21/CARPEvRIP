@@ -7,7 +7,7 @@
 	"dataset": {
 		"data_path": "dlav_data",
 		"segm_path": "segm_npy",
-		"img_path": "image_npy",
+		"img_path": "images",
 		"seed": 42,
 		"shuffle": false,
 		"nb_keypoints": 24,
