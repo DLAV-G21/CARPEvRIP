@@ -1,12 +1,14 @@
 import torch
 import os
 from tqdm import tqdm
+from utils.coco_evaluator import CocoEvaluator
 
 class Trainer():
     epoch = None
 
     def __init__(self,
                  model,
+                 decoder,
                  loss_keypoints,
                  loss_links,
                  optimizer,
@@ -16,6 +18,7 @@ class Trainer():
                  ):
         
         self.model = model
+        self.decoder = decoder
         self.loss_keypoints = loss_keypoints
         self.loss_links = loss_links
         self.optimizer = optimizer
@@ -34,20 +37,37 @@ class Trainer():
         if not os.path.isdir(PATH):
             os.makedirs(PATH)
 
+        coco_evaluator = CocoEvaluator(eval_data.dataset.coco, ["keypoints"])
+
         for epoch_ in range(self.model.epoch, self.model.epoch + epoch):
             self.train_step(train_data, writer, epoch_)
             self.model.epoch = epoch_
             torch.save(self.model.state_dict(), os.path.join(PATH, 'model_' + str(epoch) + '.pth'))
-            # result = self.eval_step(eval_data)
-            # if(self.model.best_result < result):
-            #     torch.save(self.model.state_dict(), PATH + '_best_result.pth')
+            if coco_evaluator is not None:
+                result = self.eval_step(eval_data)
+                if(self.model.best_result < result):
+                    torch.save(self.model.state_dict(), PATH + '_best_result.pth')
 
             # update learning rate
             if self.lr_scheduler is not None:
                 self.lr_scheduler.step()
 
-    def eval_step(self, eval_data):
+    @torch.no_grad
+    def eval_step(self, eval_data, coco_evaluator):
         self.model.eval()
+        for image, image_id, target in tqdm(eval_data):
+            if(self.device != 'cpu'):
+                image = image.to(self.device, non_blocking=True)
+                image_id = image_id.to(self.device, non_blocking=True)
+                target = target.to(self.device, non_blocking=True)
+
+            predicted_keypoints, predicted_links = self.model(image)
+            skeletons = self.decoder((predicted_keypoints, predicted_links), image_id)
+            
+            coco_evaluator.update_keypoints(skeletons)
+            coco_evaluator.synchronize_between_processes()
+            coco_evaluator.accumulate()
+            coco_evaluator.summarize()
         return None
 
     def train_step(self, train_data, writer, epoch_):

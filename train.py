@@ -1,6 +1,7 @@
 import os
 import json
 from model.net import Net
+from model.decoder import Decoder
 from model.losses.loss_keypoints import LossKeypoints
 from model.losses.loss_links import LossLinks
 from builder import get_optimizer_from_arguments, get_lr_scheduler_from_arguments, get_accelerator_device_from_args
@@ -23,11 +24,13 @@ def main(ROOT_PATH = 'drive/Shareddrives/DLAV'):
     device = get_accelerator_device_from_args(config)
     train_loader, val_loader, _ = get_dataloaders(config, DATA_PATH)
     writer = SummaryWriter(os.path.join(ROOT_PATH, config['logging']['log_dir']))
+    decoder = Decoder(config['decoder']['threshold'], config['decoder']['min_distance'])
     
     model.to(device)
 
     trainer = Trainer(
         model,
+        decoder,
         loss_keypoints,
         loss_links,
         optimizer,
