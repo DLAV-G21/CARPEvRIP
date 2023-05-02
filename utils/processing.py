@@ -18,7 +18,7 @@ def generate_image_segmentation(img_path,save_path_img, save_path_segm,sample_de
   model = model.to(device)
   model.eval()
   for x in tqdm(os.listdir(img_path)):
-    img2 = np.array(Image.open(os.path.join(img_path,x)).convert("RGB"))
+    img2 = np.array(Image.open(os.path.join(img_path,x)))
     img = torch.Tensor(img2).to(device).permute(2,0,1).unsqueeze(0)/255
     with torch.no_grad():
       predictions = model(img)
@@ -41,8 +41,9 @@ def generate_image_segmentation(img_path,save_path_img, save_path_segm,sample_de
       plt.show()
       return
     
-    np.save(os.path.join(save_path_img, x[:-4]+".npy"), img2)
+    #np.save(os.path.join(save_path_img, x[:-4]+".npy"), img2)
     np.save(os.path.join(save_path_segm,x[:-4]+".npy"), mask)
+
     del(img2)
     del(img)
     del(predictions)
