@@ -216,6 +216,7 @@ class ApolloDataset(Dataset):
     scale = torch.Tensor(scales+[-1]*(self.max_nb_car-nb_car))
     img = np.array(Image.open(os.path.join(self.img_path,cur_name)))
 
+
     list_transform = [al.augmentations.geometric.resize.Resize(height=self.image_size[1], width=self.image_size[0],interpolation=cv2.INTER_CUBIC,always_apply=True, p=1.0)]
     if self.apply_augm:
 
@@ -283,5 +284,5 @@ def get_dataloaders(config, data_path):
   train_loader = DataLoader(train_dataset, batch_size=config['training']['batch_size'], num_workers=config['hardware']['num_workers'],shuffle=config['dataset']['shuffle'])
   val_loader = DataLoader(val_dataset, batch_size=config['training']['batch_size'], num_workers=config['hardware']['num_workers'],shuffle=False)
   test_loader = DataLoader(test_dataset, batch_size=config['training']['batch_size'],num_workers=config['hardware']['num_workers'],shuffle=False)
-  
+
   return train_loader, val_loader, test_loader
