@@ -43,6 +43,7 @@ def generate_image_segmentation(img_path,save_path_img, save_path_segm,sample_de
     
     #np.save(os.path.join(save_path_img, x[:-4]+".npy"), img2)
     np.save(os.path.join(save_path_segm,x[:-4]+".npy"), mask)
+
     del(img2)
     del(img)
     del(predictions)
