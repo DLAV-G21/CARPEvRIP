@@ -16,56 +16,94 @@ from PIL import Image
 
 class ApolloEvalDataset(Dataset):
   def __init__(self, data_list, config, root_path, is_val):
+    # Get the correct json file based on the number of keypoints
     correct_file = 'apollo_keypoints_'+str(config['dataset']['nb_keypoints'])+'_'+('train' if is_val else 'val')+'.json'
+
+    # Define paths for the different folders
     self.img_path = os.path.join(root_path,config['dataset']['img_path'])
     self.segm_path = os.path.join(root_path,config['dataset']['segm_path'])
+
+    # Get the mean and std of the dataset
     self.mean = config['data_augmentation']['normalize']['mean']
     self.std = config['data_augmentation']['normalize']['std']
+
+    # Get the image size
     self.image_size = tuple(config['dataset']['input_size'])
+
+    # Get the width and height ratio
     self.width_ratio = self.image_size[0]/3384
     self.height_ratio = self.image_size[1]/2710
+
+    # Load the data
     self.dataset, self.annotation_file = self.load_data(os.path.join(root_path, config['dataset']['annotations_folder'],correct_file), data_list)
+
+    # Create a coco file
     coco_path = os.path.join(root_path,"coco_val.json" if is_val else "coco_test.json")
+
+    # Write the coco file
     with open(coco_path, 'w') as f:
       json.dump(self.annotation_file,f)
     
+    # Create the COCO object
     self.coco = COCO(coco_path)
+  
+  def __len__(self):
+    return len(self.dataset)
 
   def load_data(self, file, data_list):
+    # Check if given file exists
     if os.path.exists(file):
       with open(file, 'r') as f:
         data_file = json.load(f)
     else:
       raise ValueError('The given config file doesn\'t exist')
 
+    # Initialize empty data set
     dataset = []
     coco_annotations = {}
     coco_annotations["images"] = []
     coco_annotations["annotations"] = []
+    # Copy categories and info
     coco_annotations["categories"] = data_file["categories"].copy()
     coco_annotations["info"] =  data_file["info"].copy()
 
+    # Iterate over images
     for dico in data_file["images"]:
       im_id = dico["id"]
+      # Check if image is in the given data list
       if dico["file_name"] in data_list:
+        # Add image to coco annotations
         coco_annotations["images"].append(dico)
+        # Initialize empty annotations list
         cur_annotations = []
+        # Iterate over annotations
         for dico_2 in data_file["annotations"]:
+          # Make copy of annotation
           dico_copy = dico_2.copy()
+          # Check if annotation is for the current image and is not a crowd annotation
           if dico_2['image_id'] == im_id and dico_2["iscrowd"]==0:
+            # Iterate over keypoints
             keypoints = []
             for i in range(24):
+              # Get x, y and z values of keypoints
               x,y,z = tuple(dico_2['keypoints'][i*3:(i+1)*3])
+              # Multiply by width and height ratio
               x *= self.width_ratio
               y *= self.height_ratio
+              # Append to list of keypoints
               keypoints.extend([x,y,z])
 
+            # Multiply box by width and height ratio
             # box is in   (x, y, w, h)
             dico_copy["bbox"] = [dico_copy["bbox"][0]*self.width_ratio, dico_copy["bbox"][1]*self.height_ratio,dico_copy["bbox"][2]*self.width_ratio, dico_copy["bbox"][3]*self.height_ratio ]
+            # Assign new keypoints
             dico_copy["keypoints"] = keypoints
+            # Append to current annotations
             cur_annotations.append(dico_copy)
               
+        # Append annotations and image to dataset
         dataset.append((cur_annotations, dico.copy()))  
+        # Extend annotations of coco annotations
         coco_annotations["annotations"].extend(cur_annotations)
 
     return dataset, coco_annotations
@@ -82,10 +120,8 @@ class ApolloEvalDataset(Dataset):
     transformed = composition(image=img)
     transformed_image = transformed['image']
     
-
-    return transformed_image, ds_annot[idx][0]["id"], ds_annot
-
-
+    #TODO bs > 1
+    return transformed_image, self.dataset[idx][1]["id"], [ds_annot]
 
 class ApolloDataset(Dataset):
   def __init__(self, data_list, config, root_path, is_training =True):
@@ -129,7 +165,7 @@ class ApolloDataset(Dataset):
       im_id = dico["id"]
       if dico["file_name"] in data_list:
         id_list.append(im_id)
-        names[im_id] = dico["file_name"][:-4]+".npy"
+        names[im_id] = dico["file_name"]
 
     for dico in data_file['annotations']:
       im_id = dico['image_id']
@@ -152,10 +188,7 @@ class ApolloDataset(Dataset):
               kps_car.append((cls,x,y))
           if len(kps_car)>0:
             kps.append(kps_car)
-            if len(kps_car)==1:
-              scales.append(self.SCALE_SINGLE_KP)
-            else:
-              scales.append(ls['area']/(3384*2710))
+            scales.append(max(self.SCALE_SINGLE_KP, ls['area']/(3384*2710)))
       nb=len(kps)
       name = names[im_id]
       if nb > 0:

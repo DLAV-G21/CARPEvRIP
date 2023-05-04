@@ -1,22 +1,22 @@
+from typing import Any
 import torch
-import torch.nn as nn
+from torch.nn.functional import softmax
 
 import numpy as np
 
 from utils.openpifpaf_helper import CAR_SKELETON_24, CAR_SKELETON_66 
 
-class Decoder(nn.Module):
+class Decoder():
     
     def __init__(self, threshold=0.5, min_distance=100):
-        super(Decoder, self).__init__()
         self.threshold = threshold
         self.min_distance = min_distance
 
     def get_class_distribution_from_keypoints(self, keypoints):
-        return self.softmax(keypoints[:,:,2:])
+        return softmax(keypoints[:,:,2:], dim=2)
     
     def get_class_distribution_from_links(self, links):
-        return self.softmax(links[:,:,4:])
+        return softmax(links[:,:,4:], dim=2)
     
     def get_class_from_distribution(self, distribution):
         return torch.topk(distribution, k=1, dim=2)
@@ -31,6 +31,9 @@ class Decoder(nn.Module):
         if(keypoints.shape[2] - 2 == 24):
             return CAR_SKELETON_24, 24
         return CAR_SKELETON_66, 66
+
+    def __call__(self, x, images_id=None):
+        return self.forward(x, images_id)
 
     def forward(self, x, images_id=None):
         # Unpack the input
@@ -60,14 +63,20 @@ class Decoder(nn.Module):
         bones_list, nbr_keypoints = self.get_bones_list(keypoints)
         
         def get_dict(classs_, probabilitys_, positions_):
+            # A dictionary to store the values
             dict_ = {}
+            # Iterate through the three list using zip()
             for class_, probability_, position_ \
                 in zip(classs_, probabilitys_, positions_):
+                # Check if probability is greater than threshold and class is greater than zero
                 if(probability_ > self.threshold and class_ > 0):
+                    # If the class already in the dictionary add the position and probability to the list
                     if class_ in dict_:
                         dict_[class_].append((position_, probability_))
+                    # else create a new key with the position and probability
                     else:
                         dict_[class_] = [(position_, probability_)]
+            # Return the dictionary
             return dict_
         
         def list_all_skeletons(keypoints):
@@ -226,7 +235,7 @@ class Decoder(nn.Module):
             skeletons = merge(bones_list, keypoints, links, skeletons)
 
             # filter out skeletons with wrong number of keypoints
-            detrected_skeletons = filter(skeletons, b if images_id is None else images_id[b])
+            detrected_skeletons = filter(skeletons, keypoints, b if images_id is None else images_id[b])
 
             # add the skeletons to the result
             result[b if images_id is None else images_id[b]] = detrected_skeletons

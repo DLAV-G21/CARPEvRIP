@@ -10,7 +10,7 @@ from .decoder import Decoder
 class Net(nn.Module):
     
     def __init__(self, config):
-        super(Net, self).__init__()
+        super().__init__()
 
         self.backbone = self.Load_Backbones()
         self.neck = self.Load_Neck(self.backbone.pre_stage_channels)
@@ -142,7 +142,7 @@ class Net(nn.Module):
                 nn.init.constant_(m.weight, 1)
                 nn.init.constant_(m.bias, 0)
         if os.path.isfile(pretrained):
-            pretrained_dict = torch.load(pretrained)
+            pretrained_dict = torch.load(pretrained, map_location='cpu')
             
             model_dict = self.state_dict()
             pretrained_dict = {

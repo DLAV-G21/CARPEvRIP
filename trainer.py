@@ -40,11 +40,11 @@ class Trainer():
         coco_evaluator = CocoEvaluator(eval_data.dataset.coco, ["keypoints"])
 
         for epoch_ in range(self.model.epoch, self.model.epoch + epoch):
-            self.train_step(train_data, writer, epoch_)
-            self.model.epoch = epoch_
-            torch.save(self.model.state_dict(), os.path.join(PATH, 'model_' + str(epoch) + '.pth'))
+            #self.train_step(train_data, writer, epoch_)
+            #self.model.epoch = epoch_
+            #torch.save(self.model.state_dict(), os.path.join(PATH, 'model_' + str(epoch_) + '.pth'))
             if coco_evaluator is not None:
-                result = self.eval_step(eval_data)
+                result = self.eval_step(eval_data, coco_evaluator)
                 if(self.model.best_result < result):
                     torch.save(self.model.state_dict(), PATH + '_best_result.pth')
 
@@ -52,14 +52,13 @@ class Trainer():
             if self.lr_scheduler is not None:
                 self.lr_scheduler.step()
 
-    @torch.no_grad
+    @torch.no_grad()
     def eval_step(self, eval_data, coco_evaluator):
         self.model.eval()
         for image, image_id, target in tqdm(eval_data):
+            target = {k:v for k, v in zip(image_id, target)}
             if(self.device != 'cpu'):
                 image = image.to(self.device, non_blocking=True)
-                image_id = image_id.to(self.device, non_blocking=True)
-                target = target.to(self.device, non_blocking=True)
 
             predicted_keypoints, predicted_links = self.model(image)
             skeletons = self.decoder((predicted_keypoints, predicted_links), image_id)
@@ -91,18 +90,18 @@ class Trainer():
                 loss_keypoints = self.loss_keypoints(predicted_keypoints, targeted_keypoints, scale, nb_cars)
                 loss_links = self.loss_links(predicted_links, targeted_links, scale, nb_cars)
                 loss = loss_keypoints + loss_links 
+                if(loss.item() != loss.item()):
+                    raise True
                 loss.backward()
             except :
-                print()
-                print('add to skip :', i-1)
-                print()
-                print(loss_keypoints)
-                print(loss_links)
-                print(loss)
                 print()
                 print(self.model.neck.state_dict())
                 print(self.model.keypoints.state_dict())
                 print(self.model.links.state_dict())
+                print()
+                print(loss_keypoints)
+                print(loss_links)
+                print(loss)
                 raise True
 
             # update model
