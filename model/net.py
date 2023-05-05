@@ -112,7 +112,7 @@ class Net(nn.Module):
     def Load_Decoder(self, config):
         return Decoder(
             config['decoder']['threshold'],
-            config['decoder']['min_distance'],
+            config['decoder']['max_distance'],
         )
 
     def forward(self, x):

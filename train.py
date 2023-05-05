@@ -24,7 +24,7 @@ def main(ROOT_PATH = 'drive/Shareddrives/DLAV'):
     device = get_accelerator_device_from_args(config)
     train_loader, val_loader, _ = get_dataloaders(config, DATA_PATH)
     writer = SummaryWriter(os.path.join(ROOT_PATH, config['logging']['log_dir']))
-    decoder = Decoder(config['decoder']['threshold'], config['decoder']['min_distance'])
+    decoder = Decoder(config['decoder']['threshold'], config['decoder']['max_distance'])
     
     model.to(device)
 

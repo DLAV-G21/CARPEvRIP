@@ -109,18 +109,27 @@ class ApolloEvalDataset(Dataset):
     return dataset, coco_annotations
   
   def __getitem__(self, idx):
+    # get image name from dataset
     img_name = self.dataset[idx][1]["file_name"]
+    # save annotation
     ds_annot = self.dataset[idx]
+    # open image
     img = np.array(Image.open(os.path.join(self.img_path, img_name)))
-    list_transform = [al.augmentations.geometric.resize.Resize(height=self.image_size[1], width=self.image_size[0],interpolation=cv2.INTER_CUBIC,always_apply=True, p=1.0)]
+    # create list of transformations
+    list_transform = [al.augmentations.geometric.resize.Resize(height=self.image_size[1], 
+                    width=self.image_size[0],interpolation=cv2.INTER_CUBIC,always_apply=True, p=1.0)]
+    # append mean and std normalization to the list
     list_transform.append(al.Normalize(mean=self.mean, std=self.std))
+    # append torch conversion to the list
     list_transform.append(ToTensorV2())
-
+    # create composition of transformations
     composition = al.Compose(list_transform)
+    # transform image
     transformed = composition(image=img)
+    # get transformed image
     transformed_image = transformed['image']
     
-    #TODO bs > 1
+    # return transformed image, id and annotation
     return transformed_image, self.dataset[idx][1]["id"], [ds_annot]
 
 class ApolloDataset(Dataset):
@@ -307,6 +316,10 @@ class ApolloDataset(Dataset):
 
     return cur_name, transformed_image, keypoints, scale, links, torch.Tensor([nb_car]).int()
 
+def collate_fn(data):
+  img, ids, annots = [d[0] for d in data],[d[1] for d in data],[d[2] for d in data]
+  return torch.utils.data.default_collate(img), ids, annots
+
 def get_dataloaders(config, data_path):
   train_data_list, val_data_list, test_data_list = generate_train_val_test_split(config, data_path)
 
@@ -314,8 +327,8 @@ def get_dataloaders(config, data_path):
   val_dataset =  ApolloEvalDataset(val_data_list, config, data_path, is_val =True)
   test_dataset =  ApolloEvalDataset(test_data_list, config, data_path, is_val =False)
 
-  train_loader = DataLoader(train_dataset, batch_size=config['training']['batch_size'], num_workers=config['hardware']['num_workers'],shuffle=config['dataset']['shuffle'])
-  val_loader = DataLoader(val_dataset, batch_size=config['training']['batch_size'], num_workers=config['hardware']['num_workers'],shuffle=False)
-  test_loader = DataLoader(test_dataset, batch_size=config['training']['batch_size'],num_workers=config['hardware']['num_workers'],shuffle=False)
+  train_loader = DataLoader(train_dataset,batch_size=config['training']['batch_size'], num_workers=config['hardware']['num_workers'],shuffle=config['dataset']['shuffle'])
+  val_loader = DataLoader(val_dataset, collate_fn=collate_fn, batch_size=config['training']['batch_size'], num_workers=config['hardware']['num_workers'],shuffle=False)
+  test_loader = DataLoader(test_dataset, collate_fn=collate_fn, batch_size=config['training']['batch_size'],num_workers=config['hardware']['num_workers'],shuffle=False)
   
   return train_loader, val_loader, test_loader
