@@ -75,13 +75,12 @@ class Trainer():
 
             predicted_keypoints, predicted_links = self.model(image)
             skeletons = self.decoder((predicted_keypoints, predicted_links), image_id)
-            
             coco_evaluator.update_keypoints(skeletons)
 
         coco_evaluator.synchronize_between_processes()
         coco_evaluator.accumulate()
         coco_evaluator.summarize()
-        return None
+        return coco_evaluator.coco_eval['keypoints'].stats[0]
 
     def train_step(self, train_data, writer, epoch_):
         self.model.train()
@@ -99,24 +98,12 @@ class Trainer():
             # predicte
             predicted_keypoints, predicted_links = self.model(image)
 
-            try:
-                # compute loss
-                loss_keypoints = self.loss_keypoints(predicted_keypoints, targeted_keypoints, scale, nb_cars)
-                loss_links = self.loss_links(predicted_links, targeted_links, scale, nb_cars)
-                loss = loss_keypoints + loss_links 
-                if(loss.item() != loss.item()):
-                    raise True
-                loss.backward()
-            except :
-                print()
-                print(self.model.neck.state_dict())
-                print(self.model.keypoints.state_dict())
-                print(self.model.links.state_dict())
-                print()
-                print(loss_keypoints)
-                print(loss_links)
-                print(loss)
-                raise True
+            # compute loss
+            loss_keypoints = self.loss_keypoints(predicted_keypoints, targeted_keypoints, scale, nb_cars)
+            loss_links = self.loss_links(predicted_links, targeted_links, scale, nb_cars)
+            loss = loss_keypoints + loss_links
+            loss.backward()
+                
 
             # update model
             torch.nn.utils.clip_grad_value_(self.model.parameters(), self.clip_grad_value)

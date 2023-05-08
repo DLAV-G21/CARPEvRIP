@@ -1,6 +1,7 @@
 from typing import Any
 import torch
 from torch.nn.functional import softmax
+import copy
 
 import numpy as np
 
@@ -25,10 +26,10 @@ class Decoder():
         return keypoints[:,:,:2]
     
     def get_position_from_links(self, links):
-        return links[:,:,:2]
+        return links[:,:,:4]
     
     def get_bones_list(self, keypoints):
-        if(keypoints.shape[2] - 2 == 24):
+        if(keypoints.shape[2] - 3 == 24):
             return CAR_SKELETON_24, 24
         return CAR_SKELETON_66, 66
 
@@ -63,7 +64,6 @@ class Decoder():
         bones_list, nbr_keypoints = self.get_bones_list(keypoints)
         
         def get_dict(classs_, probabilitys_, positions_):
-            classs_ = np.ones(classs_.shape)
             # A dictionary to store the values
             dict_ = {}
             # Iterate through the three list using zip()
@@ -140,12 +140,14 @@ class Decoder():
                                 for skeletons_with_keypoint_v_id in skeletons_with_keypoint_v:
                                     # If skeletons_with_u and skeletons_with_v have no common keys
                                     if(len(set(skeletons[skeletons_with_keypoint_u_id][1].keys()).intersection(set(skeletons[skeletons_with_keypoint_v_id][1].keys()))) == 0):
+                                        # New skeleton's bones is combination of bones of skeletons[skeletons_with_keypoint_u_id] and skeletons[skeletons_with_keypoint_v_id]
+                                        new_dict = copy.deepcopy(skeletons[skeletons_with_keypoint_u_id][1])
+                                        new_dict.update(skeletons[skeletons_with_keypoint_v_id][1])
                                         # Add new skeleton to skeletons
                                         skeletons.append((
                                             # Log probability of new skeleton
                                             link_probability + skeletons[skeletons_with_keypoint_u_id][0] + skeletons[skeletons_with_keypoint_v_id][0],
-                                            # New skeleton's bones is combination of bones of skeletons[skeletons_with_keypoint_u_id] and skeletons[skeletons_with_keypoint_v_id]
-                                            dict(skeletons[skeletons_with_keypoint_u_id][1], **skeletons[skeletons_with_keypoint_v_id][1])
+                                            new_dict
                                         ))
 
             # Return all skeletons
@@ -162,7 +164,7 @@ class Decoder():
                 # Get the keypoint's position
                 keypoint_position, _ = keypoint
                 # Calculate the distance between the link position and the keypoint
-                distance = torch.sqrt(torch.sum(keypoint_position - link_position))
+                distance = np.sqrt(np.sum(abs(keypoint_position - link_position)))
 
                 # Check if the distance is less than the min_distance
                 if(distance < min_distance):
@@ -182,7 +184,7 @@ class Decoder():
             # Variable to keep track of the id
             id = 1
             # Iterate over the skeletons sorted by their length and score
-            for (_, skeleton) in sorted(skeletons, key=lambda x: (len(x[1]), x[0]), reverse=True):
+            for (skeleton_probability, skeleton) in sorted(skeletons, key=lambda x: (len(x[1]), x[0]), reverse=True):
                 # Check if the keypoints of this skeleton have already been used
                 if(all([(k not in used_keypoints) or (skeleton[k] not in used_keypoints[k]) for k in skeleton])):
                     # Array to store the coordinates of each keypoint
@@ -206,6 +208,7 @@ class Decoder():
                     # Create the element object
                     element = {
                         'image_id' : image_id,
+                        'score' : np.exp(skeleton_probability),
                         'category_id': 1,
                         'iscrowd': 0,
                         'id': int(str(image_id)+str(id)), #ecivalen XD <3 : image_id*10**math.ceil(np.log10(id+1))+id
@@ -218,7 +221,6 @@ class Decoder():
                     # Append the element object to the list of detrected_elements
                     detrected_elements.append(element)
 
-            print('detrected_elements', len(detrected_elements))
             # Return the filtered skeletons
             return detrected_elements
 

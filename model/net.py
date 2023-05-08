@@ -12,6 +12,7 @@ class Net(nn.Module):
     def __init__(self, config):
         super().__init__()
 
+        self.best_result = -1
         self.backbone = self.Load_Backbones()
         self.neck = self.Load_Neck(self.backbone.pre_stage_channels)
         self.keypoints = self.Load_Keypoints(config)

@@ -141,7 +141,6 @@ class ApolloEvalDataset(Dataset):
     transformed = composition(image=img)
     transformed_image = transformed['image']
     
-    #TODO bs > 1
     return transformed_image, self.dataset[idx][1]["id"], [ds_annot]
 
 class ApolloDataset(Dataset):
