@@ -17,8 +17,7 @@ from PIL import Image
 class ApolloEvalDataset(Dataset):
   def __init__(self, data_list, config, root_path, is_val):
     # Get the correct json file based on the number of keypoints
-    correct_file = 'apollo_keypoints_'+str(config['dataset']['nb_keypoints'])+'_'+('train' if is_val else 'val')+'.json'
-
+    
     # Define paths for the different folders
     self.img_path = os.path.join(root_path,config['dataset']['img_path'])
     self.segm_path = os.path.join(root_path,config['dataset']['segm_path'])
@@ -35,7 +34,7 @@ class ApolloEvalDataset(Dataset):
     self.height_ratio = self.image_size[1]/2710
 
     # Load the data
-    self.dataset, self.annotation_file = self.load_data(os.path.join(root_path, config['dataset']['annotations_folder'],correct_file), data_list)
+    self.dataset, self.annotation_file = self.load_data(root_path,config, data_list)
 
     # Create a coco file
     coco_path = os.path.join(root_path,"coco_val.json" if is_val else "coco_test.json")
@@ -50,13 +49,35 @@ class ApolloEvalDataset(Dataset):
   def __len__(self):
     return len(self.dataset)
 
-  def load_data(self, file, data_list):
-    # Check if given file exists
-    if os.path.exists(file):
-      with open(file, 'r') as f:
+  def load_data(self, root_path,config, data_list):
+    root_path = os.path.join(root_path, config["dataset"]["annotations_folder"])
+    
+    train_file = 'apollo_keypoints_'+str(config['dataset']['nb_keypoints'])+'_'+'train'+'.json'
+    val_file = 'apollo_keypoints_'+str(config['dataset']['nb_keypoints'])+'_'+'val'+'.json'
+     # Check if given file exists
+    if os.path.exists(os.path.join(root_path,train_file)):
+      with open(os.path.join(root_path,train_file), 'r') as f:
         data_file = json.load(f)
     else:
       raise ValueError('The given config file doesn\'t exist')
+    # Check if given file exists
+    if os.path.exists(os.path.join(root_path,val_file)):
+      with open(os.path.join(root_path,val_file), 'r') as f:
+        data_file2 = json.load(f)
+    else:
+      raise ValueError('The given config file doesn\'t exist')
+
+    dataset = []
+    annotations = {}
+    names = {}
+
+    all_images = []
+    all_images.extend(data_file["images"])
+    all_images.extend(data_file2["images"])
+
+    all_annotations = []
+    all_annotations.extend(data_file["annotations"])
+    all_annotations.extend(data_file2["annotations"])
 
     # Initialize empty data set
     dataset = []
@@ -68,7 +89,7 @@ class ApolloEvalDataset(Dataset):
     coco_annotations["info"] =  data_file["info"].copy()
 
     # Iterate over images
-    for dico in data_file["images"]:
+    for dico in all_images:
       im_id = dico["id"]
       # Check if image is in the given data list
       if dico["file_name"] in data_list:
@@ -77,7 +98,7 @@ class ApolloEvalDataset(Dataset):
         # Initialize empty annotations list
         cur_annotations = []
         # Iterate over annotations
-        for dico_2 in data_file["annotations"]:
+        for dico_2 in all_annotations:
           # Make copy of annotation
           dico_copy = dico_2.copy()
           # Check if annotation is for the current image and is not a crowd annotation
@@ -109,27 +130,18 @@ class ApolloEvalDataset(Dataset):
     return dataset, coco_annotations
   
   def __getitem__(self, idx):
-    # get image name from dataset
     img_name = self.dataset[idx][1]["file_name"]
-    # save annotation
     ds_annot = self.dataset[idx]
-    # open image
     img = np.array(Image.open(os.path.join(self.img_path, img_name)))
-    # create list of transformations
-    list_transform = [al.augmentations.geometric.resize.Resize(height=self.image_size[1], 
-                    width=self.image_size[0],interpolation=cv2.INTER_CUBIC,always_apply=True, p=1.0)]
-    # append mean and std normalization to the list
+    list_transform = [al.augmentations.geometric.resize.Resize(height=self.image_size[1], width=self.image_size[0],interpolation=cv2.INTER_CUBIC,always_apply=True, p=1.0)]
     list_transform.append(al.Normalize(mean=self.mean, std=self.std))
-    # append torch conversion to the list
     list_transform.append(ToTensorV2())
-    # create composition of transformations
+
     composition = al.Compose(list_transform)
-    # transform image
     transformed = composition(image=img)
-    # get transformed image
     transformed_image = transformed['image']
     
-    # return transformed image, id and annotation
+    #TODO bs > 1
     return transformed_image, self.dataset[idx][1]["id"], [ds_annot]
 
 class ApolloDataset(Dataset):
@@ -140,12 +152,12 @@ class ApolloDataset(Dataset):
     random.seed(seed)
     self.SCALE_SINGLE_KP = 1e-8
 
-    correct_file = 'apollo_keypoints_'+str(config['dataset']['nb_keypoints'])+'_'+('train' if is_training else 'val')+'.json'
-    self.dataset = self.load_data(os.path.join(root_path, config['dataset']['annotations_folder'],correct_file), data_list)
+    
+    self.dataset = self.load_data(root_path, config, data_list)
     self.img_path = os.path.join(root_path,config['dataset']['img_path'])
     self.segm_path = os.path.join(root_path,config['dataset']['segm_path'])
-    self.use_occlusion_data_augm = config['data_augmentation']['use_occlusion_data_augm'] and is_training
-    self.apply_augm = config['data_augmentation']['apply_augm'] and is_training
+    self.use_occlusion_data_augm = config['data_augmentation']['use_occlusion_data_augm']
+    self.apply_augm = config['data_augmentation']['apply_augm']
     self.mean = config['data_augmentation']['normalize']['mean']
     self.std = config['data_augmentation']['normalize']['std']
     self.prob_mask = config['data_augmentation']['prob_occlusion']
@@ -158,10 +170,19 @@ class ApolloDataset(Dataset):
     self.nb_keypoints = config['dataset']['nb_keypoints']
     self.list_links = CAR_SKELETON_24 if config['dataset']['nb_keypoints'] == 24 else CAR_SKELETON_66
     
-  def load_data(self, file, data_list):
-    if os.path.exists(file):
-      with open(file, 'r') as f:
+  def load_data(self,root_path, config,data_list):
+    root_path = os.path.join(root_path, config["dataset"]["annotations_folder"])
+    train_file = 'apollo_keypoints_'+str(config['dataset']['nb_keypoints'])+'_'+'train'+'.json'
+    val_file = 'apollo_keypoints_'+str(config['dataset']['nb_keypoints'])+'_'+'val'+'.json'
+    print(os.path.join(root_path,train_file))
+    if os.path.exists(os.path.join(root_path,train_file)):
+      with open(os.path.join(root_path,train_file), 'r') as f:
         data_file = json.load(f)
+    else:
+      raise ValueError('The given config file doesn\'t exist')
+    if os.path.exists(os.path.join(root_path,val_file)):
+      with open(os.path.join(root_path,val_file), 'r') as f:
+        data_file2 = json.load(f)
     else:
       raise ValueError('The given config file doesn\'t exist')
 
@@ -169,14 +190,22 @@ class ApolloDataset(Dataset):
     annotations = {}
     names = {}
 
+    all_images = []
+    all_images.extend(data_file["images"])
+    all_images.extend(data_file2["images"])
+
+    all_annotations = []
+    all_annotations.extend(data_file["annotations"])
+    all_annotations.extend(data_file2["annotations"])
+
     id_list = []
-    for dico in data_file["images"]:
+    for dico in all_images:
       im_id = dico["id"]
       if dico["file_name"] in data_list:
         id_list.append(im_id)
         names[im_id] = dico["file_name"]
 
-    for dico in data_file['annotations']:
+    for dico in all_annotations:
       im_id = dico['image_id']
       if im_id in id_list:
         annotations[im_id]=annotations.get(im_id,[])+[dico.copy()]   
@@ -288,6 +317,7 @@ class ApolloDataset(Dataset):
       list_transform.extend([
         al.HorizontalFlip(p=0.5),
         al.ColorJitter(0.4, 0.4, 0.5, 0.2, p=0.6),
+        al.RandomBrightnessContrast(p=0.5),
         al.ToGray(p=0.01),
         al.JpegCompression(50, 80,p=0.1),
         al.GaussNoise(var_limit=(1.0,30.0), p=0.2)
