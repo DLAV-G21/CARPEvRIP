@@ -43,6 +43,13 @@ class HungarianMatcher(nn.Module):
 
     @torch.no_grad()
     def forward(self, outputs, targets):
+        indices = []
+        for i in range(outputs.shape[0]):
+            indices.append(self.forward_(outputs[i].unsqueeze(0), targets[i].unsqueeze(0)))
+        return torch.cat(indices, dim=0)
+
+    @torch.no_grad()
+    def forward_(self, outputs, targets):
         """ Performs the matching
 
         Params:

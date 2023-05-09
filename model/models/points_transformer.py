@@ -49,8 +49,6 @@ class PointsTransformer(nn.Module):
             out_channels=nbr_points + 1 + nbr_variable,
             kernel_size=1
         )
-        
-        self.softmax = nn.Softmax(dim=1)
 
     def forward(self, x):
         queries = self.queries.expand(x.shape[0], *self.queries.shape[1:3])

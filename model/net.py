@@ -120,15 +120,15 @@ class Net(nn.Module):
         if(self.train_backbone):
             x = self.backbone(x)
         else:
-            self.backbone.init_weights("hrt_small_coco_384x288.pth")
             with torch.no_grad():
+                self.backbone.eval()
                 x = self.backbone(x)
         x = self.neck(x)
         y = self.keypoints(x)
         z = self.links(x)
         if(self.decoder is not None and not self.training):
             return self.decoder((y, z))
-        return (y, z)
+        return y, z
     
     def init_weights(
         self,
