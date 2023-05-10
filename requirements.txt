@@ -34,7 +34,6 @@ community==1.0.0b1
 confection==0.0.4
 cons==0.4.5
 contextlib2==0.6.0.post1
-contourpy==1.0.7
 convertdate==2.4.0
 cryptography==40.0.2
 cufflinks==0.17.3
