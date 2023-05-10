@@ -1,13 +1,4 @@
-sqlparse==0.4.4
-srsly==2.4.6
-statsmodels==0.13.5
-tabulate==0.8.10
-tblib==1.7.0
-tenacity==8.2.2
-tensorboard==2.11.2
-tensorboard-data-server==0.7.0
-tensorboard-plugin-wit==1.8.1
-tensorstore==0.1.36
+
 termcolor==2.3.0
 terminado==0.17.1
 text-unidecode==1.3
