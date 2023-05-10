@@ -1,5 +1,4 @@
 import os
-import random
 
 import torchvision
 import matplotlib.pyplot as plt
@@ -18,14 +17,14 @@ def generate_image_segmentation(img_path,save_path_img, save_path_segm,sample_de
   model = model.to(device)
   model.eval()
   for x in tqdm(os.listdir(img_path)):
-    img2 = np.array(Image.open(os.path.join(img_path,x)))
+    img2 = np.array(Image.open(os.path.join(img_path,x)).convert("RGB"))
     img = torch.Tensor(img2).to(device).permute(2,0,1).unsqueeze(0)/255
     with torch.no_grad():
       predictions = model(img)
     
     mask = np.zeros((img2.shape[0],img2.shape[1]))
     if sample_demonstration:
-      fig, ax = plt.subplots(1,2,figsize=(12,9))
+      _, ax = plt.subplots(1,2,figsize=(12,9))
       ax[0].imshow(img2)
     for idx, i in enumerate(predictions[0]["boxes"]):
       if int(predictions[0]["labels"][idx]) == 3 and predictions[0]["scores"][idx] > 0.95:
@@ -41,9 +40,8 @@ def generate_image_segmentation(img_path,save_path_img, save_path_segm,sample_de
       plt.show()
       return
     
-    #np.save(os.path.join(save_path_img, x[:-4]+".npy"), img2)
-    np.save(os.path.join(save_path_segm,x[:-4]+".npy"), mask)
-
+    np.savez_compressed(os.path.join(save_path_img, x[:-4]+".npz"), img2)
+    np.savez_compressed(os.path.join(save_path_segm,x[:-4]+".npz"), mask)
     del(img2)
     del(img)
     del(predictions)
@@ -53,24 +51,26 @@ def generate_train_val_test_split(config,root_path):
   The given validation dataset will give our testing set. 
   Then, we will use part of the train_split to make our validation dataset.
   """
-  train_path =os.path.join(root_path,config["dataset"]["annotations_folder"],"train-list.txt")
-  test_path =os.path.join(root_path,config["dataset"]["annotations_folder"],"validation-list.txt")
-  if os.path.exists(train_path) and os.path.exists(test_path):
-    random.seed(config["dataset"]["seed"])
-    with open(train_path, "r") as ff:
-      lines = ff.readlines()
-    all_lines = [line.strip() for line in lines]
-    nb_train = int(len(all_lines)*config["dataset"]["train_ratio"])
-    random.shuffle(all_lines)
-    train_data_list = all_lines[:nb_train]
-    val_data_list = all_lines[nb_train:]
+  train_prefix = ["180116","171206","180117"]
+  test_prefix = ["180118","180310"]
+  val_prefix = ["180114"]
+  train_data_list = []
+  val_data_list = []
+  test_data_list = []
 
-    with open(test_path, "r") as ff:
-      lines = ff.readlines()
-    test_data_list = [line.strip() for line in lines]
+  from os import listdir
+  from os.path import isfile, isdir, join
+  for f in listdir(join(root_path, "images")):
+    if isfile(join(root_path, "images",f)):
+      prefix = f.split("_")[0]
+      
+      if prefix in train_prefix:
+        train_data_list.append(f)
+      
+      if prefix in val_prefix:
+        val_data_list.append(f)
+      
+      if prefix in test_prefix:
+        test_data_list.append(f)
 
-    return train_data_list, val_data_list, test_data_list
-  else:
-    raise ValueError("The given path for the training and testing files don't exist.")
-
-  
+  return train_data_list, val_data_list, test_data_list

@@ -1,13 +1,13 @@
 {
 	"training_name": "inv_mask",
 	"model": {
-		"pretrained": "drive/Shareddrives/DLAV/model_saves/model_100.pth",
+		"pretrained": "",
 		"bn_momentum": 0.1,
 		"decode_output": false
 	},
 	"decoder":{
-		"threshold" : 0.5,
-		"max_distance" : 100 
+		"threshold" : 0.8,
+		"max_distance" : 100
 	},
 	"dataset": {
 		"data_path": "dlav_data",
@@ -34,12 +34,12 @@
 		"clip_grad_value": 0.01,
 		"max_epochs": 100,
 		"loss_keypoints": {
-			"cost_class": 1,
-			"cost_bbox": 1
+			"cost_class": 0.1,
+			"cost_bbox": 10
 		},
 		"loss_links": {
-			"cost_class": 1,
-			"cost_bbox": 1
+			"cost_class": 0.1,
+			"cost_bbox": 10
 		},
 		"optimizer": {
 			"name": "adamw",

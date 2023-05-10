@@ -46,7 +46,7 @@ class HungarianMatcher(nn.Module):
         indices = []
         for i in range(outputs.shape[0]):
             indices.append(self.forward_(outputs[i].unsqueeze(0), targets[i].unsqueeze(0)))
-        return torch.cat(indices, dim=0)
+        return torch.cat(indices, dim=1)
 
     @torch.no_grad()
     def forward_(self, outputs, targets):

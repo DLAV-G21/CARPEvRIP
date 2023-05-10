@@ -10,7 +10,7 @@ from utils.openpifpaf_helper import CAR_SKELETON_24, CAR_SKELETON_66
 class Decoder():
     
     def __init__(self, threshold=0.5, max_distance=100):
-        self.threshold = 0
+        self.threshold = threshold
         self.min_distance = max_distance
 
     def get_class_distribution_from_keypoints(self, keypoints):
@@ -114,6 +114,8 @@ class Decoder():
                             skeletons_with_keypoint_u = []
                             # List of skeletons with v
                             skeletons_with_keypoint_v = []
+                            # List of skeletons with u and v
+                            skeletons_with_keypoint_u_v = []
 
                             # For each skeleton in skeletons
                             for id_, skeleton in enumerate(skeletons):
@@ -124,14 +126,15 @@ class Decoder():
 
                                 # If best_u and best_v already in skeleton
                                 if best_keypoint_u_in and best_keypoint_v_in:
-                                    pass
+                                    # Add id_ to skeletons_with_keypoint_u_v
+                                    skeletons_with_keypoint_u_v.append(id_)
                                 # If best_u already in skeleton and no keypoint of type v is in skeleton
                                 elif best_keypoint_u_in and (not keypoint_v_in):
-                                    # Add id_ to skeletons_with_u
+                                    # Add id_ to skeletons_with_keypoint_u
                                     skeletons_with_keypoint_u.append(id_)
                                 # If best_v already in skeleton and no keypoint of type u is in skeleton
                                 elif best_keypoint_v_in and (not keypoint_u_in):
-                                    # Add id_ to skeletons_with_v
+                                    # Add id_ to skeletons_with_keypoint_v
                                     skeletons_with_keypoint_v.append(id_)
 
                             # For each skeleton_with_u
@@ -144,11 +147,25 @@ class Decoder():
                                         new_dict = copy.deepcopy(skeletons[skeletons_with_keypoint_u_id][1])
                                         new_dict.update(skeletons[skeletons_with_keypoint_v_id][1])
                                         # Add new skeleton to skeletons
+                                        skeletons_with_keypoint_u_v.append(len(skeletons))
                                         skeletons.append((
                                             # Log probability of new skeleton
                                             link_probability + skeletons[skeletons_with_keypoint_u_id][0] + skeletons[skeletons_with_keypoint_v_id][0],
                                             new_dict
                                         ))
+
+                            skeletons_to_remove = set()
+                            for skeletons_1_id in skeletons_with_keypoint_u_v:
+                                for skeletons_2_id in skeletons_with_keypoint_u_v:
+                                    if(skeletons_1_id < skeletons_2_id):
+                                        if(skeletons[skeletons_1_id][1] == skeletons[skeletons_2_id][1]):
+                                            if(skeletons[skeletons_1_id][0] > skeletons[skeletons_2_id][0]):
+                                                skeletons_to_remove.append(skeletons_2_id)
+                                            else:
+                                                skeletons_to_remove.append(skeletons_1_id)
+
+                            skeletons = [s for i,s in enumerate(skeletons) if (i not in skeletons_to_remove)]
+                            print(len(skeletons))
 
             # Return all skeletons
             return skeletons
