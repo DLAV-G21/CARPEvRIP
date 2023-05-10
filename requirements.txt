@@ -55,7 +55,6 @@ earthengine-api==0.1.350
 easydict==1.10
 ecos==2.0.12
 editdistance==0.6.2
-en-core-web-sm
 entrypoints==0.4
 ephem==4.1.4
 et-xmlfile==1.1.0
