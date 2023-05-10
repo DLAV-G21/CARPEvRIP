@@ -47,7 +47,6 @@ db-dtypes==1.1.1
 debugpy==1.6.6
 decorator==4.4.2
 defusedxml==0.7.1
-distributed==2022.12.1
 dm-tree==0.1.8
 docutils==0.16
 dopamine-rl==4.0.6
