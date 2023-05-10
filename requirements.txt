@@ -1,7 +1,4 @@
-jupyter_core
-jupyterlab-pygments==0.2.2
-jupyterlab-widgets==3.0.7
-kaggle==1.5.13
+
 kiwisolver==1.4.4
 langcodes==3.3.0
 lazy_loader==0.2
