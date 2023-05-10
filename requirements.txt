@@ -1,10 +1,9 @@
 
 
 
-torchdata==0.5.1
-torchsummary==1.5.1
-torchtext==0.15.1
-torchvision==0.15.1
+
+torchtext==0.14.1
+torchvision==0.14.1
 tornado==6.2
 tqdm==4.65.0
 traitlets==5.7.1
