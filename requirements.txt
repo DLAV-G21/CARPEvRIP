@@ -1,6 +1,3 @@
-
-
-orbax-checkpoint==0.2.1
 osqp==0.6.2.post8
 packaging==23.1
 palettable==3.3.3
