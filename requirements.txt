@@ -134,9 +134,9 @@ lxml==4.9.2
 Markdown==3.4.3
 markdown-it-py==2.2.0
 MarkupSafe==2.1.2
-matplotlib==3.5.3
-matplotlib-inline==0.1.6
-matplotlib-venn==0.11.9
+matplotlib
+matplotlib-inline
+matplotlib-venn
 mdurl==0.1.2
 miniKanren==1.0.3
 missingno==0.5.2
