@@ -108,7 +108,7 @@ inflect==6.0.4
 iniconfig==2.0.0
 intel-openmp==2023.1.0
 ipykernel==5.5.6
-ipython==7.34.0
+ipython
 ipython-genutils==0.2.0
 ipywidgets==7.7.1
 itsdangerous==2.1.2
