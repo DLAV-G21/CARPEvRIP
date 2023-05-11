@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --chdir /scratch/izar/plumey
+#SBATCH --chdir /home/plumey/ProjectRepository
 #SBATCH --nodes 1
 #SBATCH --ntasks 1
 #SBATCH --cpus-per-task 4
@@ -9,10 +9,6 @@
 #SBATCH --qos dlav
 #SBATCH --account civil-459-2023
 
-cd /home/plumey
-echo start > start.txt
-source venvs/venv-g21/bin/activate
+source ../venvs/venv-g21/bin/activate
 echo ici > ici.txt
-cd ProjectRepository
-echo la > la.txt
 python3 train.py
