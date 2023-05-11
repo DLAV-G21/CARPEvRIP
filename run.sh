@@ -9,6 +9,7 @@
 #SBATCH --qos dlav
 #SBATCH --account civil-459-2023
 
+cd /scratch/izar/plumey
 echo start > start.txt
 source venvs/venv-g21/bin/activate
 echo ici > ici.txt
