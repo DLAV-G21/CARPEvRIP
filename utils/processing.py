@@ -1,17 +1,15 @@
 import os
 
 import torchvision
-import matplotlib.pyplot as plt
 import os
 import torch
 import numpy as np
 from PIL import Image
-import matplotlib.patches as patches
 from tqdm.notebook import tqdm
 
 
 
-def generate_image_segmentation(img_path,save_path_img, save_path_segm,sample_demonstration=False):
+def generate_image_segmentation(img_path,save_path_img, save_path_segm):
   device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
   model = torchvision.models.detection.maskrcnn_resnet50_fpn(weights=torchvision.models.detection.MaskRCNN_ResNet50_FPN_Weights.DEFAULT)
   model = model.to(device)
@@ -23,22 +21,11 @@ def generate_image_segmentation(img_path,save_path_img, save_path_segm,sample_de
       predictions = model(img)
     
     mask = np.zeros((img2.shape[0],img2.shape[1]))
-    if sample_demonstration:
-      _, ax = plt.subplots(1,2,figsize=(12,9))
-      ax[0].imshow(img2)
     for idx, i in enumerate(predictions[0]["boxes"]):
       if int(predictions[0]["labels"][idx]) == 3 and predictions[0]["scores"][idx] > 0.95:
         
         i = [int(j) for j in list(i.detach().cpu().numpy())]
         mask[i[1]:i[3],i[0]:i[2]] = 1
-        if sample_demonstration:
-          rect = patches.Rectangle((i[0],i[1]), i[2]-i[0], i[3]-i[1], linewidth=5, edgecolor="r",facecolor="none")
-
-          ax[0].add_patch(rect)
-    if sample_demonstration:
-      ax[1].imshow(mask*255,cmap="gray", interpolation="nearest")
-      plt.show()
-      return
     
     np.savez_compressed(os.path.join(save_path_img, x[:-4]+".npz"), img2)
     np.savez_compressed(os.path.join(save_path_segm,x[:-4]+".npz"), mask)
