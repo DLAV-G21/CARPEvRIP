@@ -8,7 +8,6 @@
 #SBATCH --gres gpu:1
 #SBATCH --qos dlav
 #SBATCH --account civil-459-2023
-#SBATCH --reservation civil-459
 
 
 source venvs/venv-g21/bin/activate
