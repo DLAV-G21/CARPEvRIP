@@ -59,13 +59,13 @@ class ApolloEvalDataset(Dataset):
       with open(os.path.join(root_path,train_file), 'r') as f:
         data_file = json.load(f)
     else:
-      raise ValueError('The given config file doesn\'t exist')
+      raise ValueError('The given config file doesn\'t exist :', os.path.join(root_path,train_file))
     # Check if given file exists
     if os.path.exists(os.path.join(root_path,val_file)):
       with open(os.path.join(root_path,val_file), 'r') as f:
         data_file2 = json.load(f)
     else:
-      raise ValueError('The given config file doesn\'t exist')
+      raise ValueError('The given config file doesn\'t exist :', os.path.join(root_path,val_file))
 
     dataset = []
     annotations = {}

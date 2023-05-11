@@ -160,12 +160,11 @@ class Decoder():
                                     if(skeletons_1_id < skeletons_2_id):
                                         if(skeletons[skeletons_1_id][1] == skeletons[skeletons_2_id][1]):
                                             if(skeletons[skeletons_1_id][0] > skeletons[skeletons_2_id][0]):
-                                                skeletons_to_remove.append(skeletons_2_id)
+                                                skeletons_to_remove.add(skeletons_2_id)
                                             else:
-                                                skeletons_to_remove.append(skeletons_1_id)
+                                                skeletons_to_remove.add(skeletons_1_id)
 
                             skeletons = [s for i,s in enumerate(skeletons) if (i not in skeletons_to_remove)]
-                            print(len(skeletons))
 
             # Return all skeletons
             return skeletons

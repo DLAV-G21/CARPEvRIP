@@ -10,5 +10,4 @@
 #SBATCH --account civil-459-2023
 
 source ../venvs/venv-g21/bin/activate
-echo ici > ici.txt
 python3 train.py

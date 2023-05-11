@@ -3,6 +3,7 @@ f.write("start")
 f.close()
 
 import os
+import sys
 import json
 from model.net import Net
 from model.decoder import Decoder
@@ -44,7 +45,7 @@ def main(ROOT_PATH = '/home/plumey'):
         writer.close()
     except Exception as e:
         f = open(os.path.join(ROOT_PATH, 'error.log'), 'w')
-        f.write('Failed to upload to ftp:\n'+ str(e))
+        f.write('Failed to upload to ftp:\n'+ str(sys.exc_info()))
         f.close()
 
 if __name__ == '__main__' :
