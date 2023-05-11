@@ -50,7 +50,6 @@ defusedxml==0.7.1
 dm-tree==0.1.8
 docutils==0.16
 duckdb==0.7.1
-earthengine-api==0.1.350
 easydict==1.10
 ecos==2.0.12
 editdistance==0.6.2
@@ -137,9 +136,9 @@ lxml==4.9.2
 Markdown==3.4.3
 markdown-it-py==2.2.0
 MarkupSafe==2.1.2
-matplotlib
-matplotlib-inline
-matplotlib-venn
+matplotlib==3.5.3
+matplotlib-inline==0.1.6
+matplotlib-venn==0.11.9
 mdurl==0.1.2
 miniKanren==1.0.3
 missingno==0.5.2
