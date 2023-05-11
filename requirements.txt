@@ -258,7 +258,7 @@ rich==13.3.4
 rsa==4.9
 scikit-image==0.19.3
 scikit-learn==1.0.2
-scipy==1.5.0
+scipy==1.7.3
 scs==3.2.3
 seaborn==0.12.2
 Send2Trash==1.8.0
