@@ -1,3 +1,7 @@
+f = open("start.txt", "w")
+f.write("start")
+f.close()
+
 import os
 import json
 from model.net import Net
