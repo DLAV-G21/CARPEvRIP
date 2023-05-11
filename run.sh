@@ -13,4 +13,5 @@
 source venvs/venv-g21/bin/activate
 echo ici > ici.txt
 cd ProjectRepository
+echo la > la.txt
 python3 train.py

@@ -38,9 +38,14 @@ def train(model, decoder, loss_keypoints, loss_links, optimizer, lr_scheduler, c
     trainer.train(train_loader, val_loader, writer = writer, epoch = config['training']['max_epochs'], PATH = os.path.join(ROOT_PATH, config['logging']['weight_dir']))
 
 def main(ROOT_PATH = '/home/plumey'):
-    model, decoder, loss_keypoints, loss_links, optimizer, lr_scheduler, config, device, train_loader, val_loader, writer = load(ROOT_PATH)
-    train(model, decoder, loss_keypoints, loss_links, optimizer, lr_scheduler, config, device, train_loader, val_loader, writer, ROOT_PATH)
-    writer.close()
+    try:
+        model, decoder, loss_keypoints, loss_links, optimizer, lr_scheduler, config, device, train_loader, val_loader, writer = load(ROOT_PATH)
+        train(model, decoder, loss_keypoints, loss_links, optimizer, lr_scheduler, config, device, train_loader, val_loader, writer, ROOT_PATH)
+        writer.close()
+    except Exception as e:
+        f = open(os.path.join(ROOT_PATH, 'error.log'), 'w')
+        f.write('Failed to upload to ftp:\n'+ str(e))
+        f.close()
 
 if __name__ == '__main__' :
     main()  
