@@ -152,7 +152,6 @@ class Net(nn.Module):
                       os.path.isfile(os.path.join(pretrained[:-2], f))
                       )]
                   
-                  print()
                   if(len(files) > 0):
                       pretrained = os.path.join(pretrained[:-2], f'model_{max(files)}.pth')
                   else:
