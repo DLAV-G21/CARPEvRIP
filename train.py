@@ -18,7 +18,7 @@ def load(ROOT_PATH = '/home/plumey'):
 
     config['model']['pretrained'] = os.path.join(ROOT_PATH, config['model']['pretrained'])
     config['logging']['log_dir'] = os.path.join(ROOT_PATH, config['logging']['log_dir'])
-    config['logging']['model_saves'] = os.path.join(ROOT_PATH, config['logging']['model_saves'])
+    config['logging']['weight_dir'] = os.path.join(ROOT_PATH, config['logging']['weight_dir'])
     
     DATA_PATH = os.path.join(ROOT_PATH, config['dataset']['data_path'])
     model = Net(config)
