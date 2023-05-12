@@ -36,9 +36,10 @@ class Trainer():
             epoch=0,
             PATH='model'
             ):
-        # If the path does not exists, create it
         if not os.path.isdir(PATH):
             os.makedirs(PATH)
+        # If the path does not exists, create it
+        
 
         # If the learning rate scheduler is not empty
         if self.lr_scheduler is not None:

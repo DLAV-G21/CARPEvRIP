@@ -32,7 +32,7 @@
 		"batch_size": 4,
 		"train_backbone": false,
 		"clip_grad_value": 0.01,
-		"epochs": 1,
+		"max_epochs": 100,
 		"loss_keypoints": {
 			"cost_class": 0.1,
 			"cost_bbox": 10

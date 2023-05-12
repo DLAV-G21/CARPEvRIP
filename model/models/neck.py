@@ -14,7 +14,7 @@ class Neck(nn.Module):
         self,
         pre_stage_channels
     ):
-        super(Neck, self).__init__()
+        super().__init__()
 
         self.incre_modules, self.downsamp_modules = self._make_head(pre_stage_channels)
         

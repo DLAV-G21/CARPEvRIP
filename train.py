@@ -36,7 +36,7 @@ def load(ROOT_PATH = '/home/plumey'):
 
 def train(model, decoder, loss_keypoints, loss_links, optimizer, lr_scheduler, config, device, train_loader, val_loader, writer, ROOT_PATH = 'drive/Shareddrives/DLAV'):
     trainer = Trainer(model, decoder, loss_keypoints, loss_links, optimizer, lr_scheduler, config['training']['clip_grad_value'], device)
-    trainer.train(train_loader, val_loader, writer = writer, epoch = config['training']['epochs'], PATH = os.path.join(ROOT_PATH, config['logging']['weight_dir']))
+    trainer.train(train_loader, val_loader, writer = writer, epoch = config['training']['epochs'], PATH = config['logging']['weight_dir'])
 
 def main(ROOT_PATH = '/home/plumey'):
     try:
@@ -49,4 +49,4 @@ def main(ROOT_PATH = '/home/plumey'):
         f.close()
 
 if __name__ == '__main__' :
-    main()  
+    main()
