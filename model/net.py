@@ -143,7 +143,7 @@ class Net(nn.Module):
                 nn.init.constant_(m.weight, 1)
                 nn.init.constant_(m.bias, 0)
 
-        if(pretrained is not False) or len(pretrained) > 0:
+        if(pretrained is not False) and len(pretrained) > 0:
             if(pretrained.endswith('!')) and os.path.isdir(pretrained[:-2]):
                 files = [int(f[6:-4]) for f in os.listdir(pretrained[:-2]) if (
                     f.startswith('model_') and 
