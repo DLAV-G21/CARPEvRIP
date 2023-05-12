@@ -49,4 +49,6 @@ def main(ROOT_PATH = '/home/plumey'):
         f.close()
 
 if __name__ == '__main__' :
+    f = open('output.txt','w')
+    sys.stdout = f
     main()  
