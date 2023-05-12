@@ -29,19 +29,19 @@
 		"num_workers": 1
 	},
 	"training": {
-		"batch_size": 4,
+		"batch_size": 8,
 		"train_backbone": false,
 		"clip_grad_value": 0.01,
 		"epochs": 1,
 		"loss_keypoints": {
 			"cost_class": 1,
 			"cost_bbox": 5,
-			"max_distance": 100
+			"max_distance": 1000
 		},
 		"loss_links": {
 			"cost_class": 1,
 			"cost_bbox": 5,
-			"max_distance": 100
+			"max_distance": 1000
 		},
 		"optimizer": {
 			"name": "adamw",
