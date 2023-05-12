@@ -39,16 +39,22 @@ def train(model, decoder, loss_keypoints, loss_links, optimizer, lr_scheduler, c
     trainer.train(train_loader, val_loader, writer = writer, epoch = config['training']['max_epochs'], PATH = os.path.join(ROOT_PATH, config['logging']['weight_dir']))
 
 def main(ROOT_PATH = '/home/plumey'):
-    try:
-        model, decoder, loss_keypoints, loss_links, optimizer, lr_scheduler, config, device, train_loader, val_loader, writer = load(ROOT_PATH)
-        train(model, decoder, loss_keypoints, loss_links, optimizer, lr_scheduler, config, device, train_loader, val_loader, writer, ROOT_PATH)
-        writer.close()
-    except Exception as e:
-        f = open(os.path.join(ROOT_PATH, 'error.log'), 'w')
-        f.write('Failed :\n'+ str(sys.exc_info()))
-        f.close()
+    stdout = open(os.path.join(ROOT_PATH, 'output.log'))
+    sys_stdout = sys.stdout
+    sys.stdout = stdout
+    stderr = open(os.path.join(ROOT_PATH, 'error.log'))
+    sys_stderr = sys.stderr
+    sys.stderr = stderr
+
+    model, decoder, loss_keypoints, loss_links, optimizer, lr_scheduler, config, device, train_loader, val_loader, writer = load(ROOT_PATH)
+    train(model, decoder, loss_keypoints, loss_links, optimizer, lr_scheduler, config, device, train_loader, val_loader, writer, ROOT_PATH)
+    writer.close()
+
+    stdout.close()
+    stderr.close()
+    sys.stdout = sys_stdout
+    sys.stderr = sys_stderr
 
 if __name__ == '__main__' :
     f = open('output.txt','w')
-    sys.stdout = f
     main()  
