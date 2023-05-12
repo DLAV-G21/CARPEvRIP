@@ -166,7 +166,7 @@ class Net(nn.Module):
             model_dict.update(pretrained_dict)
             self.load_state_dict(model_dict)
         else:
-            if(pretrained is not False) or len(pretrained) > 0:
+            if(pretrained is not False) and len(pretrained) > 0:
                 raise ValueError('The given pretrained model file doesn\'t exist :', pretrained)
             self.backbone.init_weights("hrt_small_coco_384x288.pth")
 
