@@ -35,11 +35,13 @@
 		"epochs": 1,
 		"loss_keypoints": {
 			"cost_class": 0.1,
-			"cost_bbox": 10
+			"cost_bbox": 10,
+			"max_distance": 100
 		},
 		"loss_links": {
 			"cost_class": 0.1,
-			"cost_bbox": 10
+			"cost_bbox": 10,
+			"max_distance": 100
 		},
 		"optimizer": {
 			"name": "adamw",

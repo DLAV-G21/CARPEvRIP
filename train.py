@@ -22,8 +22,8 @@ def load(ROOT_PATH = '/home/plumey'):
     
     DATA_PATH = os.path.join(ROOT_PATH, config['dataset']['data_path'])
     model = Net(config)
-    loss_keypoints = LossKeypoints(cost_class = config['training']['loss_keypoints']['cost_class'], cost_bbox = config['training']['loss_keypoints']['cost_bbox'])
-    loss_links = LossLinks(cost_class = config['training']['loss_links']['cost_class'], cost_bbox = config['training']['loss_links']['cost_bbox'])
+    loss_keypoints = LossKeypoints(cost_class = config['training']['loss_keypoints']['cost_class'], cost_bbox = config['training']['loss_keypoints']['cost_bbox'], max_distance = config['training']['loss_keypoints']['max_distance'])
+    loss_links = LossLinks(cost_class = config['training']['loss_links']['cost_class'], cost_bbox = config['training']['loss_links']['cost_bbox'], max_distance = config['training']['loss_links']['max_distance'])
     optimizer = get_optimizer_from_arguments(config, model.parameters())
     lr_scheduler = get_lr_scheduler_from_arguments(config, optimizer)
     device = get_accelerator_device_from_args(config)

@@ -2,10 +2,8 @@ import torch
 import torch.nn as nn
 from .matching import HungarianMatcher
 
-MAX_DISTANCE = 100
-
 class LossKeypoints(nn.Module):
-    def __init__(self, cost_class: float = 1, cost_bbox: float = 1):
+    def __init__(self, cost_class: float = 1, cost_bbox: float = 1, max_distance = 100):
         """Creates the matcher
 
         Params:
@@ -22,7 +20,7 @@ class LossKeypoints(nn.Module):
             self.get_class_distribution_from_output,
             self.get_position_from_target,
             self.get_class_from_target,
-            cost_class, cost_bbox)
+            cost_class, cost_bbox, max_distance)
         self.criterion = nn.CrossEntropyLoss()
         assert cost_class != 0 or cost_bbox != 0, "all costs cant be 0"
 

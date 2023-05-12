@@ -8,8 +8,6 @@ from scipy.optimize import linear_sum_assignment
 from torch import nn
 import numpy as np
 
-MAX_DISTANCE = 200
-
 class HungarianMatcher(nn.Module):
     """This class computes an assignment between the targets and the predictions of the network
 
@@ -20,7 +18,7 @@ class HungarianMatcher(nn.Module):
 
     def __init__(self, 
                  get_position_from_output, get_class_distribution_from_output, get_position_from_target, get_class_from_target,
-                 cost_class: float = 1, cost_bbox: float = 1, cost_giou: float = 1):
+                 cost_class: float = 1, cost_bbox: float = 1, cost_giou: float = 1, max_distance = 100):
         """Creates the matcher
 
         Params:
@@ -39,6 +37,7 @@ class HungarianMatcher(nn.Module):
         self.cost_class = cost_class
         self.cost_bbox = cost_bbox
         self.cost_giou = cost_giou
+        self.max_distance = max_distance
         assert cost_class != 0 or cost_bbox != 0 or cost_giou != 0, "all costs cant be 0"
 
     @torch.no_grad()
@@ -87,8 +86,8 @@ class HungarianMatcher(nn.Module):
 
         # Compute the L2 cost between boxes
         cost_bbox = torch.cdist(out_bbox, tgt_bbox, p=2)
-        cost_bbox[cost_bbox > MAX_DISTANCE] = MAX_DISTANCE
-        cost_bbox[:, tgt_ids <= 0] = MAX_DISTANCE
+        cost_bbox[cost_bbox > self.max_distance] = self.max_distance
+        cost_bbox[:, tgt_ids <= 0] = self.max_distance
         
         cost_bbox = cost_bbox.T
         cost_class = cost_class.T
