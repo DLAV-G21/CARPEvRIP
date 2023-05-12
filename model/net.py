@@ -142,16 +142,21 @@ class Net(nn.Module):
             elif isinstance(m, nn.BatchNorm2d):
                 nn.init.constant_(m.weight, 1)
                 nn.init.constant_(m.bias, 0)
-
+        
         if(pretrained is not False) and len(pretrained) > 0:
-            if(pretrained.endswith('!')) and os.path.isdir(pretrained[:-2]):
-                files = [int(f[6:-4]) for f in os.listdir(pretrained[:-2]) if (
-                    f.startswith('model_') and 
-                    f.endswith('.pth') and 
-                    os.path.isfile(os.path.join(pretrained[:-2], f))
-                    )]
-                if(len(files) > 0):
-                    pretrained = os.path.join(pretrained[:-2], f'model_{max(files)}.pth')
+            if pretrained.endswith('!'):
+                if os.path.isdir(pretrained[:-2]):
+                  files = [int(f[6:-4]) for f in os.listdir(pretrained[:-2]) if (
+                      f.startswith('model_') and 
+                      f.endswith('.pth') and 
+                      os.path.isfile(os.path.join(pretrained[:-2], f))
+                      )]
+                  
+                  print()
+                  if(len(files) > 0):
+                      pretrained = os.path.join(pretrained[:-2], f'model_{max(files)}.pth')
+                  else:
+                      pretrained = False
                 else:
                     pretrained = False
 
