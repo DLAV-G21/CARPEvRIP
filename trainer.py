@@ -64,7 +64,7 @@ class Trainer():
                 # Run the evaluation step
                 result = self.eval_step(eval_data, coco_evaluator, writer, epoch_)
                 # If the result is better than the best result
-                if(self.model.best_result < result):
+                if(self.model.best_result <= result):
                     # Save the model
                     torch.save(self.model.state_dict(), os.path.join(PATH, 'best_result.pth'))
 
@@ -77,6 +77,7 @@ class Trainer():
     def eval_step(self, eval_data, coco_evaluator, writer, epoch_):
         self.model.eval()
         epoch_len = len(eval_data)
+        skeletons_found = 0
         for i, (image, image_id, _) in tqdm(enumerate(eval_data)):
             if(self.device != 'cpu'):
                 image = image.to(self.device, non_blocking=True)
@@ -85,14 +86,18 @@ class Trainer():
             predicted_keypoints, predicted_links = self.model(image)
             skeletons = self.decoder((predicted_keypoints, predicted_links), image_id)
             coco_evaluator.update_keypoints(skeletons)
+            skeletons_found += len(skeletons)
 
             end_time = time.time()
             writer.add_scalar('eval iteration time', end_time - start_time, epoch_ * epoch_len + i)
-
-        coco_evaluator.synchronize_between_processes()
-        coco_evaluator.accumulate()
-        coco_evaluator.summarize()
-        return coco_evaluator.coco_eval['keypoints'].stats[0]
+        
+        if(skeletons_found > 0):
+            coco_evaluator.synchronize_between_processes()
+            coco_evaluator.accumulate()
+            coco_evaluator.summarize()
+            return coco_evaluator.coco_eval['keypoints'].stats[0]
+        else:
+            return 0
 
     def train_step(self, train_data, writer, epoch_):
         self.model.train()
