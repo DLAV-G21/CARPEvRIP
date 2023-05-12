@@ -1,7 +1,3 @@
-f = open("start.txt", "w")
-f.write("start")
-f.close()
-
 import os
 import sys
 import json
@@ -19,6 +15,10 @@ def load(ROOT_PATH = '/home/plumey'):
     setup_file = open(setup_file_name)
     config = json.load(setup_file)
     setup_file.close()
+
+    config['model']['pretrained'] = os.path.join(ROOT_PATH, config['model']['pretrained'])
+    config['logging']['log_dir'] = os.path.join(ROOT_PATH, config['logging']['log_dir'])
+    config['logging']['model_saves'] = os.path.join(ROOT_PATH, config['logging']['model_saves'])
     
     DATA_PATH = os.path.join(ROOT_PATH, config['dataset']['data_path'])
     model = Net(config)
@@ -28,7 +28,7 @@ def load(ROOT_PATH = '/home/plumey'):
     lr_scheduler = get_lr_scheduler_from_arguments(config, optimizer)
     device = get_accelerator_device_from_args(config)
     train_loader, val_loader, _ = get_dataloaders(config, DATA_PATH)
-    writer = SummaryWriter(os.path.join(ROOT_PATH, config['logging']['log_dir']))
+    writer = SummaryWriter(config['logging']['log_dir'])
     decoder = Decoder(config['decoder']['threshold'], config['decoder']['max_distance'])
     
     model.to(device)
@@ -45,7 +45,7 @@ def main(ROOT_PATH = '/home/plumey'):
         writer.close()
     except Exception as e:
         f = open(os.path.join(ROOT_PATH, 'error.log'), 'w')
-        f.write('Failed to upload to ftp:\n'+ str(sys.exc_info()))
+        f.write('Failed :\n'+ str(sys.exc_info()))
         f.close()
 
 if __name__ == '__main__' :

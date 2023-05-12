@@ -142,6 +142,19 @@ class Net(nn.Module):
             elif isinstance(m, nn.BatchNorm2d):
                 nn.init.constant_(m.weight, 1)
                 nn.init.constant_(m.bias, 0)
+
+        if(pretrained is not False) or len(pretrained) > 0:
+            if(pretrained.endswith('!')) and os.path.isdir(pretrained[:-2]):
+                files = [int(f[6:-4]) for f in os.listdir(pretrained[:-2]) if (
+                    f.startswith('model_') and 
+                    f.endswith('.pth') and 
+                    os.path.isfile(os.path.join(pretrained[:-2], f))
+                    )]
+                if(len(files) > 0):
+                    pretrained = os.path.join(pretrained[:-2], f'model_{max(files)}.pth')
+                else:
+                    pretrained = False
+
         if os.path.isfile(pretrained):
             pretrained_dict = torch.load(pretrained, map_location='cpu')
             
@@ -153,6 +166,8 @@ class Net(nn.Module):
             model_dict.update(pretrained_dict)
             self.load_state_dict(model_dict)
         else:
+            if(pretrained is not False) or len(pretrained) > 0:
+                raise ValueError('The given pretrained model file doesn\'t exist :', pretrained)
             self.backbone.init_weights("hrt_small_coco_384x288.pth")
 
     def save_weights(self, filename):
