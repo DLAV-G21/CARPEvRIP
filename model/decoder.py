@@ -272,7 +272,7 @@ class Decoder():
                     'score' : 0,
                     'category_id': 1,
                     'iscrowd': 0,
-                    'id': int(str(image_id)+str(id)), #ecivalen XD <3 : image_id*10**math.ceil(np.log10(id+1))+id
+                    'id': image_id*10,
                     'bbox': [0,0,0,0],
                     'num_keypoints': 0,
                     'keypoints': np.zeros(nbr_keypoints*3),
