@@ -49,12 +49,13 @@ class Trainer():
 
         # Iterate through the specified number of epochs
         for epoch_ in range(self.model.epoch, self.model.epoch + epoch):
+            print('epoch :', epoch_)
             # Perform the training step
             self.train_step(train_data, writer, epoch_)
             # update the epoch value
-            self.model.epoch = epoch_
+            self.model.epoch = epoch_ + 1
             # Save the model
-            torch.save(self.model.state_dict(), os.path.join(PATH, f'model_{epoch_}.pth'))
+            self.model.save_weights(os.path.join(PATH, f'model_{self.model.epoch}.pth'))
 
             # Create an instance of the CocoEvaluator class to be used for evaluation
             coco_evaluator = CocoEvaluator(eval_data.dataset.coco, ["keypoints"])
@@ -91,13 +92,12 @@ class Trainer():
             end_time = time.time()
             writer.add_scalar('eval iteration time', end_time - start_time, epoch_ * epoch_len + i)
         
-        if(skeletons_found > 0):
-            coco_evaluator.synchronize_between_processes()
-            coco_evaluator.accumulate()
-            coco_evaluator.summarize()
-            return coco_evaluator.coco_eval['keypoints'].stats[0]
-        else:
-            return 0
+        print('skeletons found :',skeletons_found)
+        
+        coco_evaluator.synchronize_between_processes()
+        coco_evaluator.accumulate()
+        coco_evaluator.summarize()
+        return coco_evaluator.coco_eval['keypoints'].stats[0]
 
     def train_step(self, train_data, writer, epoch_):
         self.model.train()
@@ -122,7 +122,6 @@ class Trainer():
             loss = loss_keypoints + loss_links
             loss.backward()
                 
-
             # update model
             torch.nn.utils.clip_grad_value_(self.model.parameters(), self.clip_grad_value)
             self.optimizer.step()

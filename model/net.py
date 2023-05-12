@@ -12,6 +12,7 @@ class Net(nn.Module):
     def __init__(self, config):
         super().__init__()
 
+        self.epoch = 0
         self.best_result = -1
         self.backbone = self.Load_Backbones()
         self.neck = self.Load_Neck(self.backbone.pre_stage_channels)
@@ -134,8 +135,6 @@ class Net(nn.Module):
         self,
         pretrained="",
     ):
-        self.epoch = 0
-
         for m in self.modules():
             if isinstance(m, nn.Conv2d):
                 nn.init.kaiming_normal_(m.weight, mode="fan_out", nonlinearity="relu")
@@ -160,6 +159,8 @@ class Net(nn.Module):
                     pretrained = False
 
         if os.path.isfile(pretrained):
+            print('load :', pretrained)
+
             pretrained_dict = torch.load(pretrained, map_location='cpu')
             
             model_dict = self.state_dict()
@@ -169,7 +170,10 @@ class Net(nn.Module):
 
             model_dict.update(pretrained_dict)
             self.load_state_dict(model_dict)
+
+            self.epoch = int(pretrained.split('model_')[-1][:-4])
         else:
+            print('init_weights')
             if(pretrained is not False) and len(pretrained) > 0:
                 raise ValueError('The given pretrained model file doesn\'t exist :', pretrained)
             self.backbone.init_weights("hrt_small_coco_384x288.pth")

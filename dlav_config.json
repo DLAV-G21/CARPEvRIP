@@ -34,13 +34,13 @@
 		"clip_grad_value": 0.01,
 		"epochs": 1,
 		"loss_keypoints": {
-			"cost_class": 0.1,
-			"cost_bbox": 10,
+			"cost_class": 1,
+			"cost_bbox": 5,
 			"max_distance": 100
 		},
 		"loss_links": {
-			"cost_class": 0.1,
-			"cost_bbox": 10,
+			"cost_class": 1,
+			"cost_bbox": 5,
 			"max_distance": 100
 		},
 		"optimizer": {

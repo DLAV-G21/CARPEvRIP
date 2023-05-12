@@ -216,9 +216,9 @@ class Decoder():
                         # Get the x and y coordinates of the keypoint
                         keypoint_position, _ = keypoints[k][skeleton[k]]
                         # Store the coordinates
-                        keypoints_[k*3] = keypoint_position[0]
-                        keypoints_[k*3+1] = keypoint_position[1]
-                        keypoints_[k*3+2] = 2.0
+                        keypoints_[(k-1)*3] = keypoint_position[0]
+                        keypoints_[(k-1)*3+1] = keypoint_position[1]
+                        keypoints_[(k-1)*3+2] = 2.0
 
 
                     # Create the element object
@@ -260,8 +260,27 @@ class Decoder():
             # Merge skeletons with bones_list
             skeletons = merge(bones_list, keypoints, links, skeletons)
 
+            image_id = b if images_id is None else images_id[b]
+
             # Filter out skeletons with wrong number of keypoints
-            detrected_skeletons = filter(skeletons, keypoints, b if images_id is None else images_id[b])
+            detrected_skeletons = filter(skeletons, keypoints, image_id)
+
+            if len(detrected_skeletons) <= 0:
+                # Create the element object
+                element = {
+                    'image_id' : image_id,
+                    'score' : 0,
+                    'category_id': 1,
+                    'iscrowd': 0,
+                    'id': int(str(image_id)+str(id)), #ecivalen XD <3 : image_id*10**math.ceil(np.log10(id+1))+id
+                    'bbox': [0,0,0,0],
+                    'num_keypoints': 0,
+                    'keypoints': np.zeros(nbr_keypoints*3),
+                    'segmentation':[],
+                }
+
+                # Append the element object to the list of detrected_elements
+                detrected_skeletons.append(element)
 
             # Add the skeletons to the result
             result.extend(detrected_skeletons)
