@@ -1,7 +1,7 @@
 {
 	"training_name": "inv_mask",
 	"model": {
-		"pretrained": "",
+		"pretrained": "model_saves/!",
 		"bn_momentum": 0.1,
 		"decode_output": false
 	},
