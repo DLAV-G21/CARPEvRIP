@@ -40,12 +40,19 @@ class PointsTransformer(nn.Module):
         self.multihead_attn = nn.MultiheadAttention(head_size, 1, batch_first=True)
         self.final = nn.Sequential(
             nn.BatchNorm1d(head_size, momentum=bn_momentum),
+            nn.ReLU(),
             nn.Conv1d(
                 in_channels=head_size,
+                out_channels=head_size//2,
+                kernel_size=1
+            ),
+            nn.BatchNorm1d(head_size, momentum=bn_momentum),
+            nn.ReLU(),
+            nn.Conv1d(
+                in_channels=head_size//2,
                 out_channels=nbr_points + 1 + nbr_variable,
                 kernel_size=1
             ),
-            nn.BatchNorm1d(nbr_points + 1 + nbr_variable, momentum=bn_momentum),
         )
 
     def forward(self, x):
