@@ -3,7 +3,7 @@ import torch
 import torch.nn as nn
 
 from .models.hrt import HighResolutionTransformer
-from .models.decoder_transformer import DecoderTransformer
+from .models.head import Head
 from .models.neck import Neck
 from .decoder import Decoder
 
@@ -96,7 +96,7 @@ class Net(nn.Module):
         return Neck(pre_stage_channels)
 
     def Load_Keypoints(self, config):
-        return DecoderTransformer(
+        return Head(
             nbr_max_car=config['dataset']['max_nb'],
             nbr_points=config['dataset']['nb_keypoints'],
             nbr_variable=2,
@@ -104,7 +104,7 @@ class Net(nn.Module):
         )
 
     def Load_Links(self, config):
-        return DecoderTransformer(
+        return Head(
             nbr_max_car=config['dataset']['max_nb'],
             nbr_points=config['dataset']['nb_links'],
             nbr_variable=4,

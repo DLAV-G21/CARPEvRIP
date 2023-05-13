@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 
-class DecoderTransformer(nn.Module):
+class Head(nn.Module):
 
     def __init__(
         self,
@@ -28,7 +28,9 @@ class DecoderTransformer(nn.Module):
             kernel_size=1
         )
 
-        self.transformer_decoder = nn.TransformerDecoder(nn.TransformerDecoderLayer(d_model=embed_size, nhead=1), num_layers=3)
+        self.transformer_decoder = nn.TransformerDecoder(
+            nn.TransformerDecoderLayer(d_model=embed_size, nhead=1, batch_first=True),
+            num_layers=3)
 
         self.final = nn.Sequential(
             nn.BatchNorm1d(embed_size, momentum=bn_momentum),
@@ -46,7 +48,8 @@ class DecoderTransformer(nn.Module):
                 kernel_size=1
             ),
         )
-    def add_positional_encoding(x):
+
+    def add_positional_encoding(self, x):
         x_  = torch.tensor(range(x.shape[2])).expand(x.shape[0],1,x.shape[3],x.shape[2]).permute(0,1,3,2)
         y_  = torch.tensor(range(x.shape[3])).expand(x.shape[0],1,x.shape[2],x.shape[3])
 
