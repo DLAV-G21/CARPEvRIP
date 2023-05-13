@@ -11,6 +11,8 @@ class Head(nn.Module):
         nbr_variable,
         bn_momentum = 0.1,
         add_positional_encoding = True,
+        nhead=4,
+        num_layers=3,
     ):
         super().__init__()
 
@@ -38,8 +40,8 @@ class Head(nn.Module):
         )
 
         self.transformer_decoder = nn.TransformerDecoder(
-            nn.TransformerDecoderLayer(d_model=embed_size, nhead=1, batch_first=True),
-            num_layers=3)
+            nn.TransformerDecoderLayer(d_model=embed_size, nhead=nhead, batch_first=True),
+            num_layers=num_layers)
 
         self.final = nn.Sequential(
             nn.BatchNorm1d(embed_size, momentum=bn_momentum),
@@ -82,8 +84,6 @@ class Head(nn.Module):
         query = self.queries.expand(x.shape[0], *self.queries.shape)
         output = self.transformer_decoder(query, x)
 
-        output = output.permute(0,2,1)
-        output = self.final(output)
-        output = output.permute(0,2,1)
+        output = self.final(output.permute(0,2,1)).permute(0,2,1)
         
         return output

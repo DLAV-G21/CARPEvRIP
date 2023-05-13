@@ -16,8 +16,8 @@ class Net(nn.Module):
         self.best_result = -1
         self.backbone = self.Load_Backbones()
         self.neck = self.Load_Neck(self.backbone.pre_stage_channels)
-        self.keypoints = self.Load_Keypoints(config)
-        self.links = self.Load_Links(config)
+        self.keypoints = self.Load_Head(config, 2)
+        self.links = self.Load_Head(config, 4)
         self.links = self.Load_Links(config)
         if(config['model']['decode_output']):
             self.decoder = self.Load_Decoder(config)
@@ -95,22 +95,15 @@ class Net(nn.Module):
     def Load_Neck(self, pre_stage_channels):
         return Neck(pre_stage_channels)
 
-    def Load_Keypoints(self, config):
+    def Load_Head(self, config, nbr_variable):
         return Head(
             nbr_max_car=config['dataset']['max_nb'],
             nbr_points=config['dataset']['nb_keypoints'],
-            nbr_variable=2,
+            nbr_variable=nbr_variable,
             bn_momentum = config['model']['bn_momentum'],
             add_positional_encoding = config['model']['add_positional_encoding'],
-        )
-
-    def Load_Links(self, config):
-        return Head(
-            nbr_max_car=config['dataset']['max_nb'],
-            nbr_points=config['dataset']['nb_links'],
-            nbr_variable=4,
-            bn_momentum = config['model']['bn_momentum'],
-            add_positional_encoding = config['model']['add_positional_encoding'],
+            nhead = config['model']['nhead'],
+            num_layers = config['model']['num_layers'],
         )
 
     def Load_Decoder(self, config):

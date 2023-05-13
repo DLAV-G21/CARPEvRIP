@@ -4,7 +4,9 @@
 		"pretrained": "model_saves/!",
 		"bn_momentum": 0.1,
 		"decode_output": false,
-		"add_positional_encoding": true
+		"add_positional_encoding": true,
+		"nhead": 4,
+		"num_layers": 3
 	},
 	"decoder":{
 		"threshold" : 0.8,
