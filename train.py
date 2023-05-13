@@ -4,7 +4,6 @@ import json
 from model.net import Net
 from model.decoder import Decoder
 from model.losses.loss_keypoints import LossKeypoints
-from model.losses.loss_links import LossLinks
 from builder import get_optimizer_from_arguments, get_lr_scheduler_from_arguments, get_accelerator_device_from_args
 from dataset import get_dataloaders
 from trainer import Trainer
