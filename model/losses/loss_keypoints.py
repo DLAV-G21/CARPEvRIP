@@ -48,11 +48,12 @@ class LossKeypoints(nn.Module):
             )
     
     def forward(self, predicted_keypoints, targeted_keypoints, scale, nb_cars):
-        indices = self.matcher(predicted_keypoints, targeted_keypoints)
+        #indices = self.matcher(predicted_keypoints, targeted_keypoints)
 
         bs = targeted_keypoints.shape[0]
         num_targets = targeted_keypoints.shape[1] * targeted_keypoints.shape[2]
-        predicted_keypoints = predicted_keypoints.flatten(0,1)[indices[1].flatten(0,1),:].view(bs,num_targets,-1)
+        #predicted_keypoints = predicted_keypoints.flatten(0,1)[indices[1].flatten(0,1),:].view(bs,num_targets,-1)
+        predicted_keypoints = predicted_keypoints.flatten(0,1).view(bs,num_targets,-1)
 
         distance = self.compute_distance(predicted_keypoints, targeted_keypoints)
         
