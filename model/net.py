@@ -101,6 +101,7 @@ class Net(nn.Module):
             nbr_points=config['dataset']['nb_keypoints'],
             nbr_variable=2,
             bn_momentum = config['model']['bn_momentum'],
+            add_positional_encoding = config['model']['add_positional_encoding'],
         )
 
     def Load_Links(self, config):
@@ -109,6 +110,7 @@ class Net(nn.Module):
             nbr_points=config['dataset']['nb_links'],
             nbr_variable=4,
             bn_momentum = config['model']['bn_momentum'],
+            add_positional_encoding = config['model']['add_positional_encoding'],
         )
 
     def Load_Decoder(self, config):

@@ -3,7 +3,8 @@
 	"model": {
 		"pretrained": "model_saves/!",
 		"bn_momentum": 0.1,
-		"decode_output": false
+		"decode_output": false,
+		"add_positional_encoding": true
 	},
 	"decoder":{
 		"threshold" : 0.8,
@@ -36,12 +37,14 @@
 		"loss_keypoints": {
 			"cost_class": 0.2,
 			"cost_bbox": 1,
-			"max_distance": 1000
+			"max_distance": 1000,
+			"use_matcher": true
 		},
 		"loss_links": {
 			"cost_class": 0.2,
 			"cost_bbox": 1,
-			"max_distance": 1000
+			"max_distance": 1000,
+			"use_matcher": true
 		},
 		"optimizer": {
 			"name": "adamw",

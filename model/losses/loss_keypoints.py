@@ -3,7 +3,7 @@ import torch.nn as nn
 from .matching import HungarianMatcher
 
 class LossKeypoints(nn.Module):
-    def __init__(self, cost_class: float = 1, cost_bbox: float = 1, max_distance = 100):
+    def __init__(self, nbr_variable, cost_class: float = 1, cost_bbox: float = 1, max_distance = 100, use_matcher = True):
         """Creates the matcher
 
         Params:
@@ -11,9 +11,10 @@ class LossKeypoints(nn.Module):
             cost_bbox: This is the relative weight of the L1 error of the bounding box coordinates in the matching cost
         """
         super().__init__()
-        
+        self.nbr_variable = nbr_variable
         self.cost_class = cost_class
         self.cost_bbox = cost_bbox
+        self.use_matcher = use_matcher
 
         self.matcher = HungarianMatcher(
             self.get_position_from_output,
@@ -25,13 +26,13 @@ class LossKeypoints(nn.Module):
         assert cost_class != 0 or cost_bbox != 0, "all costs cant be 0"
 
     def get_class_distribution_from_output(self, keypoint):
-        return keypoint[:,:,2:]
+        return keypoint[:,:,self.nbr_variable:]
     
     def get_class_from_output(self, keypoint):
         return torch.argmax(self.get_class_distribution_from_output(keypoint), dim=2)
     
     def get_position_from_output(self, keypoint):
-        return keypoint[:,:,:2]
+        return keypoint[:,:,:self.nbr_variable]
     
     def get_position_from_target(self, keypoint):
         return keypoint[:,:,:,1:].flatten(1, 2)
@@ -40,6 +41,7 @@ class LossKeypoints(nn.Module):
         return keypoint[:,:,:,0].flatten(1, 2)
     
     def compute_distance(self, predicted_keypoints, targeted_keypoints):
+        #TODO ou pas
         return torch.sqrt(
                 torch.sum((
                     self.get_position_from_output(predicted_keypoints) - 
@@ -48,12 +50,15 @@ class LossKeypoints(nn.Module):
             )
     
     def forward(self, predicted_keypoints, targeted_keypoints, scale, nb_cars):
-        #indices = self.matcher(predicted_keypoints, targeted_keypoints)
 
         bs = targeted_keypoints.shape[0]
         num_targets = targeted_keypoints.shape[1] * targeted_keypoints.shape[2]
-        #predicted_keypoints = predicted_keypoints.flatten(0,1)[indices[1].flatten(0,1),:].view(bs,num_targets,-1)
-        predicted_keypoints = predicted_keypoints.flatten(0,1).view(bs,num_targets,-1)
+        
+        predicted_keypoints = predicted_keypoints.flatten(0,1)
+        if(self.use_matcher):
+            indices = self.matcher(predicted_keypoints, targeted_keypoints)
+            predicted_keypoints = predicted_keypoints[indices[1].flatten(0,1),:]
+        predicted_keypoints = predicted_keypoints.view(bs,num_targets,-1)
 
         distance = self.compute_distance(predicted_keypoints, targeted_keypoints)
         

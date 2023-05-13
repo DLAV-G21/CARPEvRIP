@@ -1,5 +1,6 @@
 import torch
 import torch.nn as nn
+import numpy as np
 
 class Head(nn.Module):
 
@@ -9,22 +10,30 @@ class Head(nn.Module):
         nbr_points,
         nbr_variable,
         bn_momentum = 0.1,
+        add_positional_encoding = True,
     ):
         super().__init__()
 
         neck_size = 1024
         embed_size = 256
-        position_size = 2
+        position_size = 30
 
         self.queries = torch.nn.Parameter(torch.rand(
-            1,
             nbr_points * nbr_max_car,
             embed_size,
         ))
 
+        self.add_positional_encoding = add_positional_encoding
+        if(add_positional_encoding):
+            self.positional_encoding = torch.nn.Parameter(torch.rand(
+                embed_size,
+                position_size,
+                position_size,
+            ))
+
         self.conv = nn.Conv2d(
             in_channels=neck_size,
-            out_channels=embed_size - position_size,
+            out_channels=embed_size,
             kernel_size=1
         )
 
@@ -49,19 +58,27 @@ class Head(nn.Module):
             ),
         )
 
-    def add_positional_encoding(self, x):
-        x_  = torch.tensor(range(x.shape[2])).expand(x.shape[0],1,x.shape[3],x.shape[2]).permute(0,1,3,2)
-        y_  = torch.tensor(range(x.shape[3])).expand(x.shape[0],1,x.shape[2],x.shape[3])
+    def cat_positional_encoding(self, x):
+        x_  = np.array(range(x.shape[2])).expand(x.shape[0],1,x.shape[3],x.shape[2]).permute(0,1,3,2)
+        y_  = np.array(range(x.shape[3])).expand(x.shape[0],1,x.shape[2],x.shape[3])
 
+        x = x[:,:-2,:,:]
         x = torch.cat((x, x_, y_), 1)
         return x.view(*x.shape[0:2],-1).permute(0,2,1)
 
 
     def forward(self, x):
-        query = self.queries.expand(x.shape[0], *self.queries.shape[1:3])
         x = self.conv(x)
-        x = self.add_positional_encoding(x)
+        if(self.add_positional_encoding):
+            positional_encoding = self.positional_encoding[:, :x.shape[2], :x.shape[3]]
+            positional_encoding = positional_encoding.expand(x.shape[0], *positional_encoding.shape)
+            x += positional_encoding
+            x = x.view(*x.shape[0:2],-1).permute(0,2,1)
+        else:
+            x = self.cat_positional_encoding(x)
 
+
+        query = self.queries.expand(x.shape[0], *self.queries.shape)
         output = self.transformer_decoder(query, x)
 
         output = output.permute(0,2,1)
