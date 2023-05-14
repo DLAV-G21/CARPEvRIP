@@ -33,6 +33,8 @@ class ApolloEvalDataset(Dataset):
     self.width_ratio = self.image_size[0]/3384
     self.height_ratio = self.image_size[1]/2710
 
+    self.max_car = config["dataset"]["max_nb"]
+
     # Load the data
     self.dataset, self.annotation_file = self.load_data(root_path,config, data_list)
 
@@ -59,19 +61,20 @@ class ApolloEvalDataset(Dataset):
       with open(os.path.join(root_path,train_file), 'r') as f:
         data_file = json.load(f)
     else:
-      raise ValueError('The given config file doesn\'t exist :', os.path.join(root_path,train_file))
+      raise ValueError('The given config file doesn\'t exist')
     # Check if given file exists
     if os.path.exists(os.path.join(root_path,val_file)):
       with open(os.path.join(root_path,val_file), 'r') as f:
         data_file2 = json.load(f)
     else:
-      raise ValueError('The given config file doesn\'t exist :', os.path.join(root_path,val_file))
+      raise ValueError('The given config file doesn\'t exist')
 
     dataset = []
     annotations = {}
     names = {}
 
     all_images = []
+
     all_images.extend(data_file["images"])
     all_images.extend(data_file2["images"])
 
@@ -109,18 +112,21 @@ class ApolloEvalDataset(Dataset):
               # Get x, y and z values of keypoints
               x,y,z = tuple(dico_2['keypoints'][i*3:(i+1)*3])
               # Multiply by width and height ratio
-              x *= self.width_ratio
-              y *= self.height_ratio
+              x /= self.image_size[0] 
+              y /= self.image_size[1] 
               # Append to list of keypoints
               keypoints.extend([x,y,z])
 
             # Multiply box by width and height ratio
             # box is in   (x, y, w, h)
-            dico_copy["bbox"] = [dico_copy["bbox"][0]*self.width_ratio, dico_copy["bbox"][1]*self.height_ratio,dico_copy["bbox"][2]*self.width_ratio, dico_copy["bbox"][3]*self.height_ratio ]
+            dico_copy["bbox"] = [dico_copy["bbox"][0]*self.image_size[0] , dico_copy["bbox"][1]*self.image_size[1],dico_copy["bbox"][2]*self.image_size[0], dico_copy["bbox"][3]*self.image_size[1] ]
+            dico_copy["scale"] = dico_copy['area']/(3384*2710)
             # Assign new keypoints
             dico_copy["keypoints"] = keypoints
             # Append to current annotations
             cur_annotations.append(dico_copy)
+          
+        cur_annotations = sorted(cur_annotations, key=lambda x:x["scale"],reverse=True)[:self.max_car]
               
         # Append annotations and image to dataset
         dataset.append((cur_annotations, dico.copy()))  
@@ -141,6 +147,7 @@ class ApolloEvalDataset(Dataset):
     transformed = composition(image=img)
     transformed_image = transformed['image']
     
+
     return transformed_image, self.dataset[idx][1]["id"], [ds_annot]
 
 class ApolloDataset(Dataset):
@@ -149,9 +156,9 @@ class ApolloDataset(Dataset):
     self.config = config
     seed = config['dataset']['seed']
     random.seed(seed)
-    self.SCALE_SINGLE_KP = 1e-8
-
-    
+    self.SCALE_SINGLE_KP = 1e-13
+    self.max_nb_car = config['dataset']['max_nb']
+    self.image_size = tuple(config['dataset']['input_size'])
     self.dataset = self.load_data(root_path, config, data_list)
     self.img_path = os.path.join(root_path,config['dataset']['img_path'])
     self.segm_path = os.path.join(root_path,config['dataset']['segm_path'])
@@ -163,8 +170,8 @@ class ApolloDataset(Dataset):
     self.prob_blur = config['data_augmentation']['prob_blur']
     self.nb_blur_source = config['data_augmentation']['nb_blur_source']
     self.blur_radius = config['data_augmentation']['blur_radius']
-    self.image_size = tuple(config['dataset']['input_size'])
-    self.max_nb_car = config['dataset']['max_nb']
+    
+    
     self.nb_links = len(CAR_SKELETON_24) if config['dataset']['nb_keypoints'] == 24 else len(CAR_SKELETON_66)
     self.nb_keypoints = config['dataset']['nb_keypoints']
     self.list_links = CAR_SKELETON_24 if config['dataset']['nb_keypoints'] == 24 else CAR_SKELETON_66
@@ -178,12 +185,12 @@ class ApolloDataset(Dataset):
       with open(os.path.join(root_path,train_file), 'r') as f:
         data_file = json.load(f)
     else:
-      raise ValueError('The given config file doesn\'t exist :', os.path.join(root_path,train_file))
+      raise ValueError('The given config file doesn\'t exist')
     if os.path.exists(os.path.join(root_path,val_file)):
       with open(os.path.join(root_path,val_file), 'r') as f:
         data_file2 = json.load(f)
     else:
-      raise ValueError('The given config file doesn\'t exist :', os.path.join(root_path,val_file))
+      raise ValueError('The given config file doesn\'t exist')
 
     dataset = []
     annotations = {}
@@ -222,15 +229,21 @@ class ApolloDataset(Dataset):
             if( z == 2.0):
               # the point is visible
               cls = i+1
-              kps_car.append((cls,x,y))
+              kps_car.append((cls,x/self.image_size[0],y/self.image_size[1]))
           if len(kps_car)>0:
             kps.append(kps_car)
             scales.append(max(self.SCALE_SINGLE_KP, ls['area']/(3384*2710)))
-      nb=len(kps)
+
+      # Keep a fix number of car 
+      kept = [(idx, scale) for idx, scale in enumerate(scales)]
+      kept = sorted(kept,key=lambda x: x[0], reverse=True)[:self.max_nb_car]
+      indices = [i for i, _ in kept]
+      scales = [x for i, x in enumerate(scales) if i in indices]
+      kps =[kp for i, kp in enumerate(kps)if i in indices]
+      nb=min(len(kps), self.max_nb_car)
       name = names[im_id]
       if nb > 0:
         dataset.append((name, kps, scales, nb))
-      
 
     return dataset
 
@@ -255,30 +268,30 @@ class ApolloDataset(Dataset):
   def find_link_among_keypoints(self, kps,labels,nb_car):
     lst_links = self.list_links
     lst = torch.ones((self.max_nb_car, self.nb_links, 5))*(-1)
+    lst[:,:,0]=0
+
     for i in range(nb_car):
       label_car =[int(j.split('-')[1]) for j in labels if int(j.split('-')[0])==i]
-      cpt = 0
+
       for cls, (a,b) in enumerate(lst_links):
         if a in label_car and b in label_car:
           idx1 = label_car.index(a)
           idx2 = label_car.index(b)
           pt10, pt11 = kps[idx1]
           pt20, pt21 = kps[idx2]
-          lst[i,cpt,:] = torch.Tensor([cls, pt10, pt11, pt20, pt21])
-          cpt+=1
+          lst[i,cls,:] = torch.Tensor([1, pt10, pt11, pt20, pt21])
 
     return lst 
 
   def keypoints_list_to_tensor(self, kps, labels, nb_car):
     keypoints = torch.ones((self.max_nb_car, self.nb_keypoints, 3))*(-1)
+    keypoints[:,:,0] = 0
     for i in range(nb_car):
-      cpt= 0
       for idx, label in enumerate(labels):
         lab = label.split('-')
         if int(lab[0]) == i:
           kp = kps[idx]
-          keypoints[i,cpt,:]=torch.Tensor([int(lab[1]),kp[0],kp[1]])
-          cpt +=1
+          keypoints[i,int(lab[1])-1,:]=torch.Tensor([1,kp[0],kp[1]])
     return keypoints 
 
   def __getitem__(self, index):
