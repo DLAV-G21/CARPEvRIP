@@ -274,7 +274,8 @@ class ApolloDataset(Dataset):
   def find_link_among_keypoints(self, kps,labels,nb_car):
     lst_links = self.list_links
     lst = torch.ones((self.max_nb_car, self.nb_links, 5))*(-1)
-    lst[:,:,0]=0
+    if not self.use_matcher:
+      lst[:,:,0]=0
 
     for i in range(nb_car):
       label_car =[int(j.split('-')[1]) for j in labels if int(j.split('-')[0])==i]
@@ -285,19 +286,26 @@ class ApolloDataset(Dataset):
           idx2 = label_car.index(b)
           pt10, pt11 = kps[idx1]
           pt20, pt21 = kps[idx2]
-          lst[i,cls,:] = torch.Tensor([1, pt10, pt11, pt20, pt21])
-
+          if self.use_matcher:
+            lst[i,cls,:] = torch.Tensor([1, pt10, pt11, pt20, pt21])
+          else:
+            lst[i,cls,:] = torch.Tensor([cls+1, pt10,pt11, pt20, pt21])  
     return lst 
 
   def keypoints_list_to_tensor(self, kps, labels, nb_car):
     keypoints = torch.ones((self.max_nb_car, self.nb_keypoints, 3))*(-1)
-    keypoints[:,:,0] = 0
+    if not self.use_matcher:
+      keypoints[:,:,0]=0
+      
     for i in range(nb_car):
       for idx, label in enumerate(labels):
         lab = label.split('-')
         if int(lab[0]) == i:
           kp = kps[idx]
-          keypoints[i,int(lab[1])-1,:]=torch.Tensor([1,kp[0],kp[1]])
+          if self.use_matcher:
+            keypoints[i,int(lab[1])-1,:]=torch.Tensor([1,kp[0],kp[1]])
+          else:
+            keypoints[i,int(lab[1])-1,:]=torch.Tensor([int(lab[1]),kp[0],kp[1]])
     return keypoints 
 
   def __getitem__(self, index):
