@@ -32,6 +32,8 @@ class ApolloEvalDataset(Dataset):
     # Get the width and height ratio
     self.width_ratio = self.image_size[0]/3384
     self.height_ratio = self.image_size[1]/2710
+    
+    self.normalize_position = config["dataset"]["normalize_position"]
 
     self.max_car = config["dataset"]["max_nb"]
 
@@ -112,8 +114,12 @@ class ApolloEvalDataset(Dataset):
               # Get x, y and z values of keypoints
               x,y,z = tuple(dico_2['keypoints'][i*3:(i+1)*3])
               # Multiply by width and height ratio
-              x /= self.image_size[0] 
-              y /= self.image_size[1] 
+              if self.normalize_position:
+                x /= self.image_size[0] 
+                y /= self.image_size[1] 
+              else:
+                x *= self.width_ratio
+                y *= self.height_ratio
               # Append to list of keypoints
               keypoints.extend([x,y,z])
 
@@ -229,7 +235,7 @@ class ApolloDataset(Dataset):
             if( z == 2.0):
               # the point is visible
               cls = i+1
-              kps_car.append((cls,x/self.image_size[0],y/self.image_size[1]))
+              kps_car.append((cls,x,y))
           if len(kps_car)>0:
             kps.append(kps_car)
             scales.append(max(self.SCALE_SINGLE_KP, ls['area']/(3384*2710)))
@@ -344,7 +350,7 @@ class ApolloDataset(Dataset):
     for id, kps in enumerate(keypoints):
       for cls, x, y in kps:
         class_labels.append(f'{id}-{cls}')
-        all_keypoints.append((x,y))
+        all_keypoints.append((x/self.image_size[1],y/self.image_size[0]))
 
     composition = al.Compose(list_transform, keypoint_params=al.KeypointParams(format='xy',label_fields=['class_labels']))
     transformed = composition(image=img, keypoints=all_keypoints, class_labels=class_labels)
