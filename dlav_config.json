@@ -20,7 +20,7 @@
 		"shuffle": true,
 		"nb_keypoints": 24,
 		"nb_links": 49,
-		"max_nb": 49,
+		"max_nb": 20,
 		"annotations_folder": "annotations",
 		"train_ratio": 0.85,
 		"input_size": [640, 480],
