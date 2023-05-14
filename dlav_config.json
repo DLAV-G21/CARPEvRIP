@@ -23,7 +23,8 @@
 		"max_nb": 49,
 		"annotations_folder": "annotations",
 		"train_ratio": 0.85,
-		"input_size": [640, 480]
+		"input_size": [640, 480],
+		"normalize_position":true
 	},
 	"hardware": {
 		"use_cuda" : true,
