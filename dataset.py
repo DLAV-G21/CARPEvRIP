@@ -162,6 +162,7 @@ class ApolloDataset(Dataset):
     self.config = config
     seed = config['dataset']['seed']
     random.seed(seed)
+    self.use_matcher = config["model"]["use_matcher"]
     self.SCALE_SINGLE_KP = 1e-13
     self.max_nb_car = config['dataset']['max_nb']
     self.image_size = tuple(config['dataset']['input_size'])
