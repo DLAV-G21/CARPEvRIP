@@ -21,14 +21,14 @@ def load(ROOT_PATH = '/home/plumey'):
     
     DATA_PATH = os.path.join(ROOT_PATH, config['dataset']['data_path'])
     model = Net(config)
-    loss_keypoints = LossKeypoints(2, cost_class = config['training']['loss_keypoints']['cost_class'], cost_bbox = config['training']['loss_keypoints']['cost_bbox'], max_distance = config['training']['loss_keypoints']['max_distance'], use_matcher = config['training']['loss_keypoints']['use_matcher'])
-    loss_links = LossKeypoints(4, cost_class = config['training']['loss_links']['cost_class'], cost_bbox = config['training']['loss_links']['cost_bbox'], max_distance = config['training']['loss_links']['max_distance'], use_matcher = config['training']['loss_links']['use_matcher'])
+    loss_keypoints = LossKeypoints(2, cost_class = config['training']['loss_keypoints']['cost_class'], cost_bbox = config['training']['loss_keypoints']['cost_bbox'], max_distance = config['training']['loss_keypoints']['max_distance'], use_matcher = config['model']['use_matcher'])
+    loss_links = LossKeypoints(4, cost_class = config['training']['loss_links']['cost_class'], cost_bbox = config['training']['loss_links']['cost_bbox'], max_distance = config['training']['loss_links']['max_distance'], use_matcher = config['model']['use_matcher'])
     optimizer = get_optimizer_from_arguments(config, model.parameters())
     lr_scheduler = get_lr_scheduler_from_arguments(config, optimizer)
     device = get_accelerator_device_from_args(config)
     train_loader, val_loader, _ = get_dataloaders(config, DATA_PATH)
     writer = SummaryWriter(config['logging']['log_dir'])
-    decoder = Decoder(config['decoder']['threshold'], config['decoder']['max_distance'])
+    decoder = Decoder(threshold = config['decoder']['threshold'], max_distance = config['decoder']['max_distance'], nbr_max_car = config['dataset']['max_nb'], use_matcher = config['model']['use_matcher'])
     
     model.to(device)
     return model, decoder, loss_keypoints, loss_links, optimizer, lr_scheduler, config, device, train_loader, val_loader, writer

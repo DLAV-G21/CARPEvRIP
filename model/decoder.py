@@ -1,6 +1,6 @@
 from typing import Any
 import torch
-from torch.nn.functional import softmax
+from torch.nn.functional import softmax, sigmoid
 import copy
 
 import numpy as np
@@ -9,18 +9,22 @@ from utils.openpifpaf_helper import CAR_SKELETON_24, CAR_SKELETON_66
 
 class Decoder():
     
-    def __init__(self, threshold=0.5, max_distance=100):
+    def __init__(self, threshold = 0.5, max_distance = 100, nbr_max_car = 20, use_matcher = True):
         self.threshold = threshold
         self.min_distance = max_distance
+        self.nbr_max_car = nbr_max_car
+        self.use_matcher = use_matcher
 
     def get_class_distribution_from_keypoints(self, keypoints):
-        return softmax(keypoints[:,:,2:], dim=2)
+        return softmax(keypoints[:,:,2:], dim=2) if self.use_matcher else sigmoid(keypoints[:,:,2])
     
     def get_class_distribution_from_links(self, links):
-        return softmax(links[:,:,4:], dim=2)
+        return softmax(links[:,:,4:], dim=2) if self.use_matcher else sigmoid(links[:,:,4])
     
     def get_class_from_distribution(self, distribution):
-        return torch.topk(distribution, k=1, dim=2)
+        if(self.use_matcher):
+            return torch.topk(distribution, k=1, dim=2)
+        return (distribution, torch.tensor([i+1 for i in range(distribution.shape[1]//self.nbr_max_car)] * self.nbr_max_car).expand(distribution.shape))
     
     def get_position_from_keypoints(self, keypoints):
         return keypoints[:,:,:2]
@@ -39,6 +43,9 @@ class Decoder():
     def forward(self, x, images_id=None):
         # Unpack the input
         keypoints, links = x
+
+        print('keypoints', keypoints.shape)
+        print('links', links.shape)
 
         # Get the keypoints class and probability
         keypoints_probability, keypoints_class = self.get_class_from_distribution(
@@ -69,8 +76,10 @@ class Decoder():
             # Iterate through the three list using zip()
             for class_, probability_, position_ \
                 in zip(classs_, probabilitys_, positions_):
-                class_ = int(class_[0])
-                probability_ = probability_[0]
+                if self.use_matcher:
+                    class_ = class_[0]
+                    probability_ = probability_[0]
+                class_ = int(class_)
                 # Check if probability is greater than threshold and class is greater than zero
                 if(probability_ >= self.threshold and class_ > 0):
                     # If the class already in the dictionary add the position and probability to the list

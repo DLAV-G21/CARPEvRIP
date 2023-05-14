@@ -22,14 +22,11 @@ class LossKeypoints(nn.Module):
             self.get_position_from_target,
             self.get_class_from_target,
             cost_class, cost_bbox, max_distance)
-        self.criterion = nn.CrossEntropyLoss()
+        self.criterion = nn.CrossEntropyLoss() if use_matcher else nn.BCELoss()
         assert cost_class != 0 or cost_bbox != 0, "all costs cant be 0"
 
     def get_class_distribution_from_output(self, keypoint):
         return keypoint[:,:,self.nbr_variable:]
-    
-    def get_class_from_output(self, keypoint):
-        return torch.argmax(self.get_class_distribution_from_output(keypoint), dim=2)
     
     def get_position_from_output(self, keypoint):
         return keypoint[:,:,:self.nbr_variable]

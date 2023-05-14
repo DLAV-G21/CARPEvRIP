@@ -11,8 +11,9 @@ class Head(nn.Module):
         nbr_variable,
         bn_momentum = 0.1,
         add_positional_encoding = True,
-        nhead=4,
-        num_layers=3,
+        nhead = 4,
+        num_layers = 3,
+        use_matcher = True,
     ):
         super().__init__()
 
@@ -55,7 +56,7 @@ class Head(nn.Module):
             nn.ReLU(),
             nn.Conv1d(
                 in_channels=embed_size//2,
-                out_channels=nbr_points + 1 + nbr_variable,
+                out_channels=nbr_points + 1 + nbr_variable if use_matcher else nbr_variable + 1,
                 kernel_size=1
             ),
         )

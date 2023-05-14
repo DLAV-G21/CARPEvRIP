@@ -4,9 +4,10 @@
 		"pretrained": "model_saves/!",
 		"bn_momentum": 0.1,
 		"decode_output": false,
-		"add_positional_encoding": true,
+		"add_positional_encoding": false,
 		"nhead": 4,
-		"num_layers": 3
+		"num_layers": 3,
+		"use_matcher": false
 	},
 	"decoder":{
 		"threshold" : 0.8,
@@ -24,7 +25,7 @@
 		"annotations_folder": "annotations",
 		"train_ratio": 0.85,
 		"input_size": [640, 480],
-		"normalize_position":true
+		"normalize_position": false
 	},
 	"hardware": {
 		"use_cuda" : true,
@@ -40,14 +41,12 @@
 		"loss_keypoints": {
 			"cost_class": 0.2,
 			"cost_bbox": 1,
-			"max_distance": 1000,
-			"use_matcher": true
+			"max_distance": 1000
 		},
 		"loss_links": {
 			"cost_class": 0.2,
 			"cost_bbox": 1,
-			"max_distance": 1000,
-			"use_matcher": true
+			"max_distance": 1000
 		},
 		"optimizer": {
 			"name": "adamw",
