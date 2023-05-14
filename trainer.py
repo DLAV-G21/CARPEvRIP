@@ -16,7 +16,10 @@ class Trainer():
             optimizer,
             lr_scheduler,
             clip_grad_value,
-            device
+            device,
+            train_loader,
+            val_loader,
+            writer
             ):
         
         self.model = model
@@ -27,12 +30,12 @@ class Trainer():
         self.lr_scheduler = lr_scheduler
         self.clip_grad_value = clip_grad_value
         self.device = device
+        self.train_data = train_loader
+        self.eval_data = val_loader
+        self.writer = writer
         
     def train(
             self,
-            train_data: torch.utils.data.DataLoader,
-            eval_data: torch.utils.data.DataLoader,
-            writer,
             epoch=0,
             PATH='model'
             ):
@@ -51,19 +54,19 @@ class Trainer():
         for epoch_ in range(self.model.epoch, self.model.epoch + epoch):
             print('epoch :', epoch_)
             # Perform the training step
-            self.train_step(train_data, writer, epoch_)
+            self.train_step(self.train_data, self.writer, epoch_)
             # update the epoch value
             self.model.epoch = epoch_ + 1
             # Save the model
             self.model.save_weights(os.path.join(PATH, f'model_{self.model.epoch}.pth'))
 
             # Create an instance of the CocoEvaluator class to be used for evaluation
-            coco_evaluator = CocoEvaluator(eval_data.dataset.coco, ["keypoints"])
+            coco_evaluator = CocoEvaluator(self.eval_data.dataset.coco, ["keypoints"])
 
             # If the coco evaluator is not empty
             if coco_evaluator is not None:
                 # Run the evaluation step
-                result = self.eval_step(eval_data, coco_evaluator, writer, epoch_)
+                result = self.eval_step(self.eval_data, coco_evaluator, self.writer, epoch_)
                 # If the result is better than the best result
                 if(self.model.best_result <= result):
                     # Save the model

@@ -63,8 +63,9 @@ class Head(nn.Module):
 
     def cat_positional_encoding(self, x):
         device = x.device
-        x_  = torch.tensor(range(x.shape[2]), dtype=torch.float64, device=device).expand(x.shape[0],1,x.shape[3],x.shape[2]).permute(0,1,3,2)
-        y_  = torch.tensor(range(x.shape[3]), dtype=torch.float64, device=device).expand(x.shape[0],1,x.shape[2],x.shape[3])
+        dtype = x.dtype
+        x_  = torch.tensor(range(x.shape[2]), dtype=dtype, device=device).expand(x.shape[0],1,x.shape[3],x.shape[2]).permute(0,1,3,2)
+        y_  = torch.tensor(range(x.shape[3]), dtype=dtype, device=device).expand(x.shape[0],1,x.shape[2],x.shape[3])
 
         x = x[:,:-2,:,:]
         x = torch.cat((x, x_, y_), 1)
@@ -80,7 +81,6 @@ class Head(nn.Module):
             x = x.view(*x.shape[0:2],-1).permute(0,2,1)
         else:
             x = self.cat_positional_encoding(x)
-
 
         query = self.queries.expand(x.shape[0], *self.queries.shape)
         output = self.transformer_decoder(query, x)

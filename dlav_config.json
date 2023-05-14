@@ -4,14 +4,14 @@
 		"pretrained": "model_saves/!",
 		"bn_momentum": 0.1,
 		"decode_output": false,
-		"add_positional_encoding": false,
+		"add_positional_encoding": true,
 		"nhead": 4,
 		"num_layers": 3,
 		"use_matcher": false
 	},
 	"decoder":{
-		"threshold" : 0.8,
-		"max_distance" : 100
+		"threshold" : 0.99,
+		"max_distance" : 0.2
 	},
 	"dataset": {
 		"data_path": "dlav_data",
@@ -23,9 +23,8 @@
 		"nb_links": 49,
 		"max_nb": 20,
 		"annotations_folder": "annotations",
-		"train_ratio": 0.85,
 		"input_size": [640, 480],
-		"normalize_position": false
+		"normalize_position": true
 	},
 	"hardware": {
 		"use_cuda" : true,
@@ -34,19 +33,17 @@
 		"num_workers": 1
 	},
 	"training": {
-		"batch_size": 4,
+		"batch_size": 8,
 		"train_backbone": false,
 		"clip_grad_value": 0.01,
 		"epochs": 1,
 		"loss_keypoints": {
 			"cost_class": 0.2,
-			"cost_bbox": 1,
-			"max_distance": 1000
+			"cost_bbox": 1
 		},
 		"loss_links": {
 			"cost_class": 0.2,
-			"cost_bbox": 1,
-			"max_distance": 1000
+			"cost_bbox": 1
 		},
 		"optimizer": {
 			"name": "adamw",

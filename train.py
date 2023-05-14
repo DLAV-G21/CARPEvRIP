@@ -21,8 +21,8 @@ def load(ROOT_PATH = '/home/plumey'):
     
     DATA_PATH = os.path.join(ROOT_PATH, config['dataset']['data_path'])
     model = Net(config)
-    loss_keypoints = LossKeypoints(2, cost_class = config['training']['loss_keypoints']['cost_class'], cost_bbox = config['training']['loss_keypoints']['cost_bbox'], max_distance = config['training']['loss_keypoints']['max_distance'], use_matcher = config['model']['use_matcher'])
-    loss_links = LossKeypoints(4, cost_class = config['training']['loss_links']['cost_class'], cost_bbox = config['training']['loss_links']['cost_bbox'], max_distance = config['training']['loss_links']['max_distance'], use_matcher = config['model']['use_matcher'])
+    loss_keypoints = LossKeypoints(2, cost_class = config['training']['loss_keypoints']['cost_class'], cost_bbox = config['training']['loss_keypoints']['cost_bbox'], max_distance = config['decoder']['max_distance'], use_matcher = config['model']['use_matcher'])
+    loss_links = LossKeypoints(4, cost_class = config['training']['loss_links']['cost_class'], cost_bbox = config['training']['loss_links']['cost_bbox'], max_distance = config['decoder']['max_distance'], use_matcher = config['model']['use_matcher'], nb_keypoints = config['dataset']['nb_keypoints'])
     optimizer = get_optimizer_from_arguments(config, model.parameters())
     lr_scheduler = get_lr_scheduler_from_arguments(config, optimizer)
     device = get_accelerator_device_from_args(config)
@@ -31,11 +31,12 @@ def load(ROOT_PATH = '/home/plumey'):
     decoder = Decoder(threshold = config['decoder']['threshold'], max_distance = config['decoder']['max_distance'], nbr_max_car = config['dataset']['max_nb'], use_matcher = config['model']['use_matcher'])
     
     model.to(device)
-    return model, decoder, loss_keypoints, loss_links, optimizer, lr_scheduler, config, device, train_loader, val_loader, writer
+    trainer = Trainer(model, decoder, loss_keypoints, loss_links, optimizer, lr_scheduler, config['training']['clip_grad_value'], device, train_loader, val_loader, writer = writer)
 
-def train(model, decoder, loss_keypoints, loss_links, optimizer, lr_scheduler, config, device, train_loader, val_loader, writer, ROOT_PATH = 'drive/Shareddrives/DLAV'):
-    trainer = Trainer(model, decoder, loss_keypoints, loss_links, optimizer, lr_scheduler, config['training']['clip_grad_value'], device)
-    trainer.train(train_loader, val_loader, writer = writer, epoch = config['training']['epochs'], PATH = config['logging']['weight_dir'])
+    return trainer, config
+
+def train(trainer, config):
+    trainer.train(epoch = config['training']['epochs'], PATH = config['logging']['weight_dir'])
 
 def main(ROOT_PATH = '/home/plumey'):
     try:

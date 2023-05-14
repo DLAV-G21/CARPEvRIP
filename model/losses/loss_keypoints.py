@@ -22,11 +22,11 @@ class LossKeypoints(nn.Module):
             self.get_position_from_target,
             self.get_class_from_target,
             cost_class, cost_bbox, max_distance)
-        self.criterion = nn.CrossEntropyLoss() if use_matcher else nn.BCELoss()
+        self.criterion = nn.CrossEntropyLoss() if use_matcher else nn.BCEWithLogitsLoss()
         assert cost_class != 0 or cost_bbox != 0, "all costs cant be 0"
 
     def get_class_distribution_from_output(self, keypoint):
-        return keypoint[:,:,self.nbr_variable:]
+        return keypoint[:,:,self.nbr_variable:] if self.use_matcher else keypoint[:,:,self.nbr_variable]
     
     def get_position_from_output(self, keypoint):
         return keypoint[:,:,:self.nbr_variable]
@@ -71,6 +71,9 @@ class LossKeypoints(nn.Module):
         target_class = self.get_class_from_target(targeted_keypoints)
         target_class[target_class < 0] = 0
 
-        classification_loss = self.criterion(self.get_class_distribution_from_output(predicted_keypoints).permute(0,2,1), target_class.long())
+        classification_loss = self.criterion(
+            self.get_class_distribution_from_output(predicted_keypoints).permute(0,2,1) if self.use_matcher else self.get_class_distribution_from_output(predicted_keypoints),
+            target_class.long() if self.use_matcher else target_class
+        )
 
         return self.cost_bbox * OKS_loss + self.cost_class * classification_loss

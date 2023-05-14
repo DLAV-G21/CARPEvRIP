@@ -9,11 +9,12 @@ from utils.openpifpaf_helper import CAR_SKELETON_24, CAR_SKELETON_66
 
 class Decoder():
     
-    def __init__(self, threshold = 0.5, max_distance = 100, nbr_max_car = 20, use_matcher = True):
+    def __init__(self, threshold = 0.5, max_distance = 100, nbr_max_car = 20, use_matcher = True, nb_keypoints = 24):
         self.threshold = threshold
         self.min_distance = max_distance
         self.nbr_max_car = nbr_max_car
         self.use_matcher = use_matcher
+        self.nb_keypoints = nb_keypoints
 
     def get_class_distribution_from_keypoints(self, keypoints):
         return softmax(keypoints[:,:,2:], dim=2) if self.use_matcher else sigmoid(keypoints[:,:,2])
@@ -32,8 +33,8 @@ class Decoder():
     def get_position_from_links(self, links):
         return links[:,:,:4]
     
-    def get_bones_list(self, keypoints):
-        if(keypoints.shape[2] - 3 == 24):
+    def get_bones_list(self):
+        if(self.nb_keypoints == 24):
             return CAR_SKELETON_24, 24
         return CAR_SKELETON_66, 66
 
@@ -43,9 +44,6 @@ class Decoder():
     def forward(self, x, images_id=None):
         # Unpack the input
         keypoints, links = x
-
-        print('keypoints', keypoints.shape)
-        print('links', links.shape)
 
         # Get the keypoints class and probability
         keypoints_probability, keypoints_class = self.get_class_from_distribution(
@@ -68,7 +66,7 @@ class Decoder():
         )
 
         # Get the bones list from the keypoints
-        bones_list, nbr_keypoints = self.get_bones_list(keypoints)
+        bones_list, nbr_keypoints = self.get_bones_list()
         
         def get_dict(classs_, probabilitys_, positions_):
             # A dictionary to store the values
