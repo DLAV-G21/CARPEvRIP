@@ -1,3 +1,6 @@
+# copyed from openpifpaf and PE-former
+# https://github.com/openpifpaf/openpifpaf/blob/main/src/openpifpaf/plugins/apollocar3d/constants.py
+# https://github.com/openpifpaf/openpifpaf/blob/main/src/openpifpaf/plugins/apollocar3d/transforms.py
 from collections import defaultdict
 from typing import List, Tuple
 
