@@ -13,7 +13,7 @@ This is the file and folder structure of the github repository.
 ```
 model	      					# Folder containing all our models
     ├── losses 					# Folder with the different losses used throughout the training
-	├── hrformer				# clone of the HRFormer repository containing the different parts of the HRFormer model
+    ├── hrformer				# clone of the HRFormer repository containing the different parts of the HRFormer model
     ├── model_saves				# the different weights of the different trained_models
     ├── decoder.py				# Python decoder to match links and keypoints and create skeleton for the different car in the images
     ├── head.py					# The transformer deocder 
@@ -44,9 +44,9 @@ training.py			      		# Script to train our models
 
 To get the docker image, you can do two different things: 
 - Get it from DockerHub using the command:
-  
-```
 
+```
+docker pull alessioverardo/dlav_g21:latest
 ```
 - Create the docker image locally using the following two commands: 
 
