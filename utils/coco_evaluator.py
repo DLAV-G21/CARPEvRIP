@@ -1,6 +1,7 @@
 #################################################################
-# copyed from openpifpafpouf
+# copyed from openpifpaf and PE-former
 # https://github.com/openpifpaf/openpifpaf
+# https://github.com/padeler/PE-former
 #################################################################
 
 import os

@@ -2,9 +2,9 @@ import os
 import torch
 import torch.nn as nn
 
-from .models.hrt import HighResolutionTransformer
-from .models.head import Head
-from .models.neck import Neck
+from .hrformer.hrt import HighResolutionTransformer
+from .head import Head
+from .neck import Neck
 from .decoder import Decoder
 
 class Net(nn.Module):

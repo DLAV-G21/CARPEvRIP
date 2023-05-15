@@ -1,3 +1,4 @@
+import argparse
 import os
 import sys
 import json
@@ -9,8 +10,9 @@ from dataset import get_dataloaders
 from trainer import Trainer
 from torch.utils.tensorboard import SummaryWriter
 
-def load(ROOT_PATH = '/home/plumey'):
-    setup_file_name ='dlav_config.json'
+def load(ROOT_PATH = '/home/plumey', setup_file_name ='dlav_config.json'):
+    if not os.path.isfile(setup_file_name):
+        raise ValueError('config file does\'t exist :', setup_file_name)
     setup_file = open(setup_file_name)
     config = json.load(setup_file)
     setup_file.close()
@@ -22,13 +24,13 @@ def load(ROOT_PATH = '/home/plumey'):
     DATA_PATH = os.path.join(ROOT_PATH, config['dataset']['data_path'])
     model = Net(config)
     loss_keypoints = LossKeypoints(2, cost_class = config['training']['loss_keypoints']['cost_class'], cost_bbox = config['training']['loss_keypoints']['cost_bbox'], max_distance = config['decoder']['max_distance'], use_matcher = config['model']['use_matcher'])
-    loss_links = LossKeypoints(4, cost_class = config['training']['loss_links']['cost_class'], cost_bbox = config['training']['loss_links']['cost_bbox'], max_distance = config['decoder']['max_distance'], use_matcher = config['model']['use_matcher'], nb_keypoints = config['dataset']['nb_keypoints'])
+    loss_links = LossKeypoints(4, cost_class = config['training']['loss_links']['cost_class'], cost_bbox = config['training']['loss_links']['cost_bbox'], max_distance = config['decoder']['max_distance'], use_matcher = config['model']['use_matcher'])
     optimizer = get_optimizer_from_arguments(config, model.parameters())
     lr_scheduler = get_lr_scheduler_from_arguments(config, optimizer)
     device = get_accelerator_device_from_args(config)
     train_loader, val_loader, _ = get_dataloaders(config, DATA_PATH)
     writer = SummaryWriter(config['logging']['log_dir'])
-    decoder = Decoder(threshold = config['decoder']['threshold'], max_distance = config['decoder']['max_distance'], nbr_max_car = config['dataset']['max_nb'], use_matcher = config['model']['use_matcher'])
+    decoder = Decoder(threshold = config['decoder']['threshold'], max_distance = config['decoder']['max_distance'], nbr_max_car = config['dataset']['max_nb'], use_matcher = config['model']['use_matcher'], nb_keypoints = config['dataset']['nb_keypoints'])
     
     model.to(device)
     trainer = Trainer(model, decoder, loss_keypoints, loss_links, optimizer, lr_scheduler, config['training']['clip_grad_value'], device, train_loader, val_loader, writer = writer)
@@ -38,15 +40,19 @@ def load(ROOT_PATH = '/home/plumey'):
 def train(trainer, config):
     trainer.train(epoch = config['training']['epochs'], PATH = config['logging']['weight_dir'])
 
-def main(ROOT_PATH = '/home/plumey'):
+def main(ROOT_PATH, setup_file_name):
     try:
-        model, decoder, loss_keypoints, loss_links, optimizer, lr_scheduler, config, device, train_loader, val_loader, writer = load(ROOT_PATH)
-        train(model, decoder, loss_keypoints, loss_links, optimizer, lr_scheduler, config, device, train_loader, val_loader, writer, ROOT_PATH)
-        writer.close()
-    except Exception as e:
+        trainer, config = load(ROOT_PATH, setup_file_name)
+        train(trainer, config)
+        trainer.writer.close()
+    except:
         f = open(os.path.join(ROOT_PATH, 'error.log'), 'w')
         f.write('Failed :\n'+ str(sys.exc_info()))
         f.close()
 
 if __name__ == '__main__' :
-    main()
+    parser = argparse.ArgumentParser()
+    parser.add_argument("root", help="path to the root of the project", required=True)
+    parser.add_argument("--config", help="path to the config file", default="dlav_config.json", required=False)
+    args = parser.parse_args()
+    main(args.ROOT_PATH, args.setup_file_name)

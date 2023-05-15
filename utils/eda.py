@@ -1,4 +1,3 @@
-
 def annotations_by_image(data):
   dataset = {}
   annotations = {}

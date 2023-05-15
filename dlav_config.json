@@ -1,5 +1,5 @@
 {
-	"training_name": "inv_mask",
+	"name": "baseline",
 	"model": {
 		"pretrained": "model_saves/!",
 		"bn_momentum": 0.1,
