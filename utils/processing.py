@@ -27,7 +27,6 @@ def generate_image_segmentation(img_path,save_path_img, save_path_segm):
         i = [int(j) for j in list(i.detach().cpu().numpy())]
         mask[i[1]:i[3],i[0]:i[2]] = 1
     
-    np.savez_compressed(os.path.join(save_path_img, x[:-4]+".npz"), img2)
     np.savez_compressed(os.path.join(save_path_segm,x[:-4]+".npz"), mask)
     del(img2)
     del(img)
