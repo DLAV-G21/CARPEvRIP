@@ -12,15 +12,51 @@ import os
 import json
 from pycocotools.coco import COCO
 from PIL import Image
+from functools import partial
+
+
+class ApolloInference(Dataset):
+  def __init__(self,root_path, img_path,config):
+
+      self.img_path = os.path.join(root_path,img_path)
+         # Get the mean and std of the dataset
+      self.mean = config['data_augmentation']['normalize']['mean']
+      self.std = config['data_augmentation']['normalize']['std']
+
+      # Get the image size
+      self.image_size = tuple(config['dataset']['input_size'])
+      self.dataset = self.load_data()
+    
+  def __len__(self):
+    return len(self.dataset)
+
+  def load_data(self):
+      dataset = []
+      for f in os.listdir(self.img_path):
+        if os.path.isfile(os.path.join(self.img_path, f)):
+          dataset.append(f)
+      return dataset
+  
+  def __getitem__(self, idx):
+    img_name = self.dataset[idx]
+    img = np.array(Image.open(os.path.join(self.img_path, img_name)))
+    list_transform = [al.augmentations.geometric.resize.Resize(height=self.image_size[1], width=self.image_size[0],interpolation=cv2.INTER_CUBIC,always_apply=True, p=1.0)]
+    list_transform.append(al.Normalize(mean=self.mean, std=self.std))
+    list_transform.append(ToTensorV2())
+
+    composition = al.Compose(list_transform)
+    transformed = composition(image=img)
+    transformed_image = transformed['image']
+    return transformed_image, img_name
+    
 
 
 class ApolloEvalDataset(Dataset):
-  def __init__(self, data_list, config, root_path, is_val):
-    # Get the correct json file based on the number of keypoints
-    
+  def __init__(self, data_list, config, root_path, is_val,is_inference=False, inference_path="", inference_image_path=""):
+    self.inference_path = inference_path
+    self.is_inference = is_inference
     # Define paths for the different folders
-    self.img_path = os.path.join(root_path,config['dataset']['img_path'])
-    self.segm_path = os.path.join(root_path,config['dataset']['segm_path'])
+    self.img_path = os.path.join(root_path,config['dataset']['img_path']) if not is_inference else os.path.join(root_path,inference_image_path)
 
     # Get the mean and std of the dataset
     self.mean = config['data_augmentation']['normalize']['mean']
@@ -41,7 +77,7 @@ class ApolloEvalDataset(Dataset):
     self.dataset, self.annotation_file = self.load_data(root_path,config, data_list)
 
     # Create a coco file
-    coco_path = os.path.join(root_path,"coco_val.json" if is_val else "coco_test.json")
+    coco_path = os.path.join(root_path,"coco_val.json" if is_val else "coco_test.json") if not is_inference else os.path.join(root_path, inference_path)
 
     # Write the coco file
     with open(coco_path, 'w') as f:
@@ -53,7 +89,7 @@ class ApolloEvalDataset(Dataset):
   def __len__(self):
     return len(self.dataset)
 
-  def load_data(self, root_path,config, data_list):
+  def load_data(self, root_path,config, data_list,inference_path=""):
     root_path = os.path.join(root_path, config["dataset"]["annotations_folder"])
     
     train_file = 'apollo_keypoints_'+str(config['dataset']['nb_keypoints'])+'_'+'train'+'.json'
@@ -70,10 +106,15 @@ class ApolloEvalDataset(Dataset):
         data_file2 = json.load(f)
     else:
       raise ValueError('The given config file doesn\'t exist :', os.path.join(root_path,val_file))
+    
 
-    dataset = []
-    annotations = {}
-    names = {}
+    if self.is_inference:
+      data_file2 = {"images":[], "annotations":[]}
+      if os.path.exists(os.path.join(root_path,inference_path)):
+        with open(os.path.join(root_path,inference_path), 'r') as f:
+          data_file = json.load(f)
+      else:
+        raise ValueError('The given config file doesn\'t exist :', os.path.join(root_path,inference_path))
 
     all_images = []
 
@@ -373,9 +414,13 @@ class ApolloDataset(Dataset):
 
     return cur_name, transformed_image, keypoints, scale, links, torch.Tensor([nb_car]).int()
 
-def collate_fn(data):
-  img, ids, annots = [d[0] for d in data],[d[1] for d in data],[d[2] for d in data]
-  return torch.utils.data.default_collate(img), ids, annots
+def collate_fn(data, ann =True):
+  if ann:
+    img, ids, annots = [d[0] for d in data],[d[1] for d in data],[d[2] for d in data]
+    return torch.utils.data.default_collate(img), ids, annots
+  else:
+    img, ids = [d[0] for d in data],[d[1] for d in data]
+    return torch.utils.data.default_collate(img), ids
 
 def get_dataloaders(config, data_path):
   train_data_list, val_data_list, test_data_list = generate_train_val_test_split(config, data_path)
@@ -389,3 +434,15 @@ def get_dataloaders(config, data_path):
   test_loader = DataLoader(test_dataset, collate_fn=collate_fn, batch_size=config['training']['batch_size'],num_workers=config['hardware']['num_workers'],shuffle=False)
   
   return train_loader, val_loader, test_loader
+
+
+def load_dataloader_inference(config, root_path, image_path, annotations_file=None):
+    if annotations_file is None:
+      dataset = ApolloInference(root_path, image_path,config)
+      ann =False 
+    else:
+      data_list = [ f for f in os.listdir(image_path) if os.path.isfile(os.path.join(image_path, f))]
+      dataset =  ApolloEvalDataset(data_list, config, root_path, is_val=False, is_inference=True, inference_path=annotations_file, inference_image_path=image_path)
+      ann = True
+    
+    return DataLoader(dataset, collate_fn=partial(collate_fn, ann=ann), batch_size=config['training']['batch_size'],num_workers=config['hardware']['num_workers'],shuffle=False)

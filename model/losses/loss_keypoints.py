@@ -21,7 +21,7 @@ class LossKeypoints(nn.Module):
             self.get_class_distribution_from_output,
             self.get_position_from_target,
             self.get_class_from_target,
-            cost_class, cost_bbox, max_distance)
+            cost_class, cost_bbox, max_distance)  if use_matcher else None
         self.criterion = nn.CrossEntropyLoss() if use_matcher else nn.BCEWithLogitsLoss()
         assert cost_class != 0 or cost_bbox != 0, "all costs cant be 0"
 

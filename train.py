@@ -13,9 +13,8 @@ from torch.utils.tensorboard import SummaryWriter
 def load(ROOT_PATH = '/home/plumey', setup_file_name ='dlav_config.json'):
     if not os.path.isfile(setup_file_name):
         raise ValueError('config file does\'t exist :', setup_file_name)
-    setup_file = open(setup_file_name)
-    config = json.load(setup_file)
-    setup_file.close()
+    with open(setup_file_name) as setup_file:
+        config = json.load(setup_file)
 
     config['model']['pretrained'] = os.path.join(ROOT_PATH, config['model']['pretrained'])
     config['logging']['log_dir'] = os.path.join(ROOT_PATH, config['logging']['log_dir'])
