@@ -201,7 +201,7 @@ class Decoder():
         
         def filter(skeletons, keypoints, image_id):
             # List to store the filtered skeletons
-            detrected_elements = []
+            detected_elements = []
             # Set to store the used keypoints
             used_keypoints = {}
             # Variable to keep track of the id
@@ -211,7 +211,7 @@ class Decoder():
                 # Check if the keypoints of this skeleton have already been used
                 if(all([(k not in used_keypoints) or (skeleton[k] not in used_keypoints[k]) for k in skeleton])):
                     # Array to store the coordinates of each keypoint
-                    keypoints_ = np.zeros(nbr_keypoints*3)
+                    keypoints_ = list(np.zeros(nbr_keypoints*3))
 
                     # Iterate over the different keypoints
                     for k in skeleton:
@@ -234,18 +234,18 @@ class Decoder():
                         'score' : np.exp(skeleton_probability),
                         'category_id': 1,
                         'iscrowd': 0,
-                        'id': int(str(image_id)+str(id)), #ecivalen XD <3 : image_id*10**math.ceil(np.log10(id+1))+id
+                        'id': int(str(image_id)+str(id)) if isinstance(image_id, int) else f'{image_id}{id}', #ecivalen XD <3 : image_id*10**math.ceil(np.log10(id+1))+id
                         'bbox': [0,0,0,0],
                         'num_keypoints': len(skeleton),
                         'keypoints': keypoints_,
                         'segmentation':[],
                     }
 
-                    # Append the element object to the list of detrected_elements
-                    detrected_elements.append(element)
+                    # Append the element object to the list of detected_elements
+                    detected_elements.append(element)
 
             # Return the filtered skeletons
-            return detrected_elements
+            return detected_elements
 
         keypoints_class = keypoints_class.to('cpu').numpy()
         keypoints_probability = keypoints_probability.to('cpu').numpy()
@@ -270,27 +270,27 @@ class Decoder():
             image_id = b if images_id is None else images_id[b]
 
             # Filter out skeletons with wrong number of keypoints
-            detrected_skeletons = filter(skeletons, keypoints, image_id)
+            detected_skeletons = filter(skeletons, keypoints, image_id)
 
-            if len(detrected_skeletons) <= 0:
+            if len(detected_skeletons) <= 0:
                 # Create the element object
                 element = {
                     'image_id' : image_id,
                     'score' : 0,
                     'category_id': 1,
                     'iscrowd': 0,
-                    'id': image_id*10,
+                    'id': image_id*10 if isinstance(image_id, int) else f'{image_id}{0}',
                     'bbox': [0,0,0,0],
                     'num_keypoints': 0,
-                    'keypoints': np.zeros(nbr_keypoints*3),
+                    'keypoints': list(np.zeros(nbr_keypoints*3)),
                     'segmentation':[],
                 }
 
-                # Append the element object to the list of detrected_elements
-                detrected_skeletons.append(element)
+                # Append the element object to the list of detected_elements
+                detected_skeletons.append(element)
 
             # Add the skeletons to the result
-            result.extend(detrected_skeletons)
+            result.extend(detected_skeletons)
 
         # Return the result
         return result

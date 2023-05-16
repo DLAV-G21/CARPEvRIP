@@ -19,20 +19,21 @@ def plot_distribution(distribution,title,xlabel,ylabel="Count",logy=False,bins=N
 def plot_and_save_keypoints_inference(image_folder, data, output_folder, scale):
     for f in os.listdir(image_folder):
         if os.path.isfile(os.path.join(image_folder, f)):
+            fig, ax = plt.subplots(1,1)
             img = np.array(Image.open(os.path.join(image_folder, f)))
-            plt.imshow(img)
+            ax.imshow(img)
             for lst in data[f]:
                kps = lst["keypoints"]
 
                for i in range(24):
-                x,y,z = tuple(kps['keypoints'][i*3:(i+1)*3])
+                x,y,z = tuple(kps[i*3:(i+1)*3])
                 x *= img.shape[1]/scale[0]
                 y *= img.shape[2]/scale[1]
                 if(z > 0):
-                    circle1 = plt.Circle((x,y), 3, color='r')
-                    plt.add_patch(circle1)
+                    circle = plt.Circle((x,y), 3, color='r')
+                    ax.add_patch(circle)
 
-            plt.imsave(os.path.join(output_folder, f), img)
+            fig.savefig(os.path.join(output_folder, f))
             plt.clf()
 
 def plot_keypoints(im, keypoints):

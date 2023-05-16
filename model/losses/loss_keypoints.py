@@ -3,7 +3,7 @@ import torch.nn as nn
 from .matching import HungarianMatcher
 
 class LossKeypoints(nn.Module):
-    def __init__(self, nbr_variable, cost_class: float = 1, cost_bbox: float = 1, max_distance = 100, use_matcher = True):
+    def __init__(self, nbr_variable, scale_factor = 1, cost_class: float = 1, cost_bbox: float = 1, max_distance = 100, use_matcher = True):
         """Creates the matcher
 
         Params:
@@ -15,6 +15,7 @@ class LossKeypoints(nn.Module):
         self.cost_class = cost_class
         self.cost_bbox = cost_bbox
         self.use_matcher = use_matcher
+        self.scale_factor = scale_factor
 
         self.matcher = HungarianMatcher(
             self.get_position_from_output,
@@ -51,11 +52,9 @@ class LossKeypoints(nn.Module):
         bs = targeted_keypoints.shape[0]
         num_targets = targeted_keypoints.shape[1] * targeted_keypoints.shape[2]
         
-        predicted_keypoints = predicted_keypoints.flatten(0,1)
         if(self.use_matcher):
             indices = self.matcher(predicted_keypoints, targeted_keypoints)
-            predicted_keypoints = predicted_keypoints[indices[1].flatten(0,1),:]
-        predicted_keypoints = predicted_keypoints.view(bs,num_targets,-1)
+            predicted_keypoints = predicted_keypoints.flatten(0,1)[indices[1].flatten(0,1),:].view(bs,num_targets,-1)
 
         distance = self.compute_distance(predicted_keypoints, targeted_keypoints)
         
@@ -65,7 +64,7 @@ class LossKeypoints(nn.Module):
         sum_[sum_ < 1] = 1
 
         OKS_loss = torch.sum(nb_cars) - torch.sum(
-            torch.exp(- distance.view(targeted_keypoints.shape[:3]) / scale.unsqueeze(2)**2 ) * filter / sum_
+            torch.exp(- distance.view(targeted_keypoints.shape[:3]) / (scale.unsqueeze(2)**2 * self.scale_factor) ) * filter / sum_
         )
 
         target_class = self.get_class_from_target(targeted_keypoints)

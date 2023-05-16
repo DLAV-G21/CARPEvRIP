@@ -15,19 +15,22 @@ def load(ROOT_PATH = '/home/plumey', setup_file_name ='dlav_config.json', image 
     with open(setup_file_name) as setup_file:
         config = json.load(setup_file)
         
-    config['model']['pretrained'] = os.path.join(ROOT_PATH, config['model']['pretrained'])
+    
+    save = os.path.join(ROOT_PATH, config['model']['model_saves'], config['name'])
+
     config['model']['backbone_save'] = os.path.join(ROOT_PATH, config['model']['backbone_save'])
     config['model']['model_saves'] = os.path.join(ROOT_PATH, config['model']['model_saves'])
     config['logging']['log_dir'] = os.path.join(ROOT_PATH, config['logging']['log_dir'])
-    config['logging']['weight_dir'] = os.path.join(ROOT_PATH, config['logging']['weight_dir'])
 
+    print(image)
+    print(ROOT_PATH)
     model = Net(config)
     device = get_accelerator_device_from_args(config)
     val_loader = load_dataloader_inference(config, ROOT_PATH, image, anotation)
     decoder = Decoder(threshold = config['decoder']['threshold'], max_distance = config['decoder']['max_distance'], nbr_max_car = config['dataset']['max_nb'], use_matcher = config['model']['use_matcher'], nb_keypoints = config['dataset']['nb_keypoints'])
 
     model.to(device)
-    trainer = Trainer(model, decoder, None, None, None, None, None, device, None, val_loader, None)
+    trainer = Trainer(save, model, decoder, None, None, None, None, None, device, None, val_loader, None)
 
     return trainer, config
 
@@ -55,11 +58,14 @@ def save_img(results, ROOT_PATH, image, img_out, config):
 		[1, 1] if config['dataset']['normalize_position'] else config['dataset']['input_size']
     )
 
+def eval(trainer, config):
+    results = trainer.eval()
+    return to_json(results)
+
 def main(ROOT_PATH, image, setup_file_name, json_out, img_out):
     try:
         trainer, config = load(ROOT_PATH, setup_file_name, image)
-        results = trainer.eval()
-        results = to_json(results)
+        results = eval(trainer, config)
         if(json_out is not None):
             save_json(results, json_out)
         if(img_out is not None):

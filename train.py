@@ -32,16 +32,14 @@ def load(ROOT_PATH = '/home/plumey', setup_file_name ='dlav_config.json', overri
     with open(os.path.join(save, 'config.json'), "w") as outfile:
         outfile.write(json.dumps(config))
 
-    config['model']['pretrained'] = os.path.join(ROOT_PATH, config['model']['pretrained'])
     config['model']['backbone_save'] = os.path.join(ROOT_PATH, config['model']['backbone_save'])
     config['model']['model_saves'] = os.path.join(ROOT_PATH, config['model']['model_saves'])
     config['logging']['log_dir'] = os.path.join(ROOT_PATH, config['logging']['log_dir'])
-    config['logging']['weight_dir'] = os.path.join(ROOT_PATH, config['logging']['weight_dir'])
     
     DATA_PATH = os.path.join(ROOT_PATH, config['dataset']['data_path'])
     model = Net(config)
-    loss_keypoints = LossKeypoints(2, cost_class = config['training']['loss_keypoints']['cost_class'], cost_bbox = config['training']['loss_keypoints']['cost_bbox'], max_distance = config['decoder']['max_distance'], use_matcher = config['model']['use_matcher'])
-    loss_links = LossKeypoints(4, cost_class = config['training']['loss_links']['cost_class'], cost_bbox = config['training']['loss_links']['cost_bbox'], max_distance = config['decoder']['max_distance'], use_matcher = config['model']['use_matcher'])
+    loss_keypoints = LossKeypoints(2, cost_class = config['training']['loss_keypoints']['cost_class'], cost_bbox = config['training']['loss_keypoints']['cost_bbox'], scale_factor = config['training']['loss_keypoints']['scale_factor'], max_distance = config['decoder']['max_distance'], use_matcher = config['model']['use_matcher'])
+    loss_links = LossKeypoints(4, cost_class = config['training']['loss_links']['cost_class'], cost_bbox = config['training']['loss_links']['cost_bbox'], scale_factor = config['training']['loss_links']['scale_factor'], max_distance = config['decoder']['max_distance'], use_matcher = config['model']['use_matcher'])
     optimizer = get_optimizer_from_arguments(config, model.parameters())
     lr_scheduler = get_lr_scheduler_from_arguments(config, optimizer)
     device = get_accelerator_device_from_args(config)

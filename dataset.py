@@ -17,7 +17,7 @@ from functools import partial
 
 class ApolloInference(Dataset):
   def __init__(self,root_path, img_path,config):
-
+      self.coco = None
       self.img_path = os.path.join(root_path,img_path)
          # Get the mean and std of the dataset
       self.mean = config['data_augmentation']['normalize']['mean']
@@ -25,6 +25,7 @@ class ApolloInference(Dataset):
 
       # Get the image size
       self.image_size = tuple(config['dataset']['input_size'])
+      self.img_size = tuple(config['dataset']['img_size'])
       self.dataset = self.load_data()
     
   def __len__(self):
@@ -57,6 +58,7 @@ class ApolloEvalDataset(Dataset):
     self.is_inference = is_inference
     # Define paths for the different folders
     self.img_path = os.path.join(root_path,config['dataset']['img_path']) if not is_inference else os.path.join(root_path,inference_image_path)
+    self.img_size = tuple(config['dataset']['img_size'])
 
     # Get the mean and std of the dataset
     self.mean = config['data_augmentation']['normalize']['mean']
@@ -66,8 +68,8 @@ class ApolloEvalDataset(Dataset):
     self.image_size = tuple(config['dataset']['input_size'])
 
     # Get the width and height ratio
-    self.width_ratio = self.image_size[0]/3384
-    self.height_ratio = self.image_size[1]/2710
+    self.width_ratio = self.image_size[0]/self.img_size[0]
+    self.height_ratio = self.image_size[1]/self.img_size[1]
     
     self.normalize_position = config["dataset"]["normalize_position"]
 
@@ -156,8 +158,8 @@ class ApolloEvalDataset(Dataset):
               x,y,z = tuple(dico_2['keypoints'][i*3:(i+1)*3])
               # Multiply by width and height ratio
               if self.normalize_position:
-                x /= self.image_size[0] 
-                y /= self.image_size[1] 
+                x /= self.img_size[0]
+                y /= self.img_size[1] 
               else:
                 x *= self.width_ratio
                 y *= self.height_ratio
@@ -166,8 +168,8 @@ class ApolloEvalDataset(Dataset):
 
             # Multiply box by width and height ratio
             # box is in   (x, y, w, h)
-            dico_copy["bbox"] = [dico_copy["bbox"][0]*self.image_size[0] , dico_copy["bbox"][1]*self.image_size[1],dico_copy["bbox"][2]*self.image_size[0], dico_copy["bbox"][3]*self.image_size[1] ]
-            dico_copy["scale"] = dico_copy['area']/(3384*2710)
+            dico_copy["bbox"] = [dico_copy["bbox"][0]/self.image_size[0] , dico_copy["bbox"][1]/self.image_size[1],dico_copy["bbox"][2]/self.image_size[0], dico_copy["bbox"][3]/self.image_size[1] ]
+            dico_copy["scale"] = dico_copy['area']/(self.image_size[0]*self.image_size[1])
             # Assign new keypoints
             dico_copy["keypoints"] = keypoints
             # Append to current annotations
@@ -198,18 +200,20 @@ class ApolloEvalDataset(Dataset):
     return transformed_image, self.dataset[idx][1]["id"], [ds_annot]
 
 class ApolloDataset(Dataset):
-  def __init__(self, data_list, config, root_path, is_training =True):
+  def __init__(self, data_list, config, root_path):
     
     self.config = config
     seed = config['dataset']['seed']
     random.seed(seed)
     self.use_matcher = config["model"]["use_matcher"]
-    self.SCALE_SINGLE_KP = 1e-13
+    self.normalize_position = config["dataset"]["normalize_position"]
+    self.SCALE_SINGLE_KP = 1e-9
     self.max_nb_car = config['dataset']['max_nb']
     self.image_size = tuple(config['dataset']['input_size'])
     self.dataset = self.load_data(root_path, config, data_list)
     self.img_path = os.path.join(root_path,config['dataset']['img_path'])
     self.segm_path = os.path.join(root_path,config['dataset']['segm_path'])
+    self.img_size = config['dataset']['img_size']
     self.use_occlusion_data_augm = config['data_augmentation']['use_occlusion_data_augm']
     self.apply_augm = config['data_augmentation']['apply_augm']
     self.mean = config['data_augmentation']['normalize']['mean']
@@ -274,17 +278,18 @@ class ApolloDataset(Dataset):
         if ls['iscrowd'] == 0:
           for i in range(24):
             x,y,z = tuple(ls['keypoints'][i*3:(i+1)*3])
+
             if( z == 2.0):
               # the point is visible
               cls = i+1
               kps_car.append((cls,x,y))
           if len(kps_car)>0:
             kps.append(kps_car)
-            scales.append(max(self.SCALE_SINGLE_KP, ls['area']/(3384*2710)))
+            scales.append(max(self.SCALE_SINGLE_KP, ls['area']/(self.image_size[0]*self.image_size[1])))
 
       # Keep a fix number of car 
       kept = [(idx, scale) for idx, scale in enumerate(scales)]
-      kept = sorted(kept,key=lambda x: x[0], reverse=True)[:self.max_nb_car]
+      kept = sorted(kept,key=lambda x: x[1], reverse=True)[:self.max_nb_car]
       indices = [i for i, _ in kept]
       scales = [x for i, x in enumerate(scales) if i in indices]
       kps =[kp for i, kp in enumerate(kps)if i in indices]
@@ -329,9 +334,9 @@ class ApolloDataset(Dataset):
           pt10, pt11 = kps[idx1]
           pt20, pt21 = kps[idx2]
           if self.use_matcher:
-            lst[i,cls,:] = torch.Tensor([1, pt10, pt11, pt20, pt21])
-          else:
             lst[i,cls,:] = torch.Tensor([cls+1, pt10,pt11, pt20, pt21])  
+          else:
+            lst[i,cls,:] = torch.Tensor([1, pt10, pt11, pt20, pt21])
     return lst 
 
   def keypoints_list_to_tensor(self, kps, labels, nb_car):
@@ -344,10 +349,11 @@ class ApolloDataset(Dataset):
         lab = label.split('-')
         if int(lab[0]) == i:
           kp = kps[idx]
+          x, y = kp[0],kp[1]
           if self.use_matcher:
-            keypoints[i,int(lab[1])-1,:]=torch.Tensor([1,kp[0],kp[1]])
+            keypoints[i,int(lab[1])-1,:]=torch.Tensor([int(lab[1]),x,y])
           else:
-            keypoints[i,int(lab[1])-1,:]=torch.Tensor([int(lab[1]),kp[0],kp[1]])
+             keypoints[i,int(lab[1])-1,:]=torch.Tensor([1,x,y])
     return keypoints 
 
   def __getitem__(self, index):
@@ -400,7 +406,7 @@ class ApolloDataset(Dataset):
     for id, kps in enumerate(keypoints):
       for cls, x, y in kps:
         class_labels.append(f'{id}-{cls}')
-        all_keypoints.append((x/self.image_size[1],y/self.image_size[0]))
+        all_keypoints.append((x,y))
 
     composition = al.Compose(list_transform, keypoint_params=al.KeypointParams(format='xy',label_fields=['class_labels']))
     transformed = composition(image=img, keypoints=all_keypoints, class_labels=class_labels)
@@ -408,6 +414,8 @@ class ApolloDataset(Dataset):
     transformed_keypoints = transformed['keypoints']
     transformed_class_labels = transformed['class_labels']
 
+    if self.normalize_position: 
+      transformed_keypoints = [(x/self.image_size[0],y/self.image_size[1]) for x, y in transformed_keypoints]
 
     links = self.find_link_among_keypoints(transformed_keypoints, transformed_class_labels, nb_car)
     keypoints = self.keypoints_list_to_tensor(transformed_keypoints, transformed_class_labels, nb_car)
@@ -425,7 +433,7 @@ def collate_fn(data, ann =True):
 def get_dataloaders(config, data_path):
   train_data_list, val_data_list, test_data_list = generate_train_val_test_split(config, data_path)
 
-  train_dataset = ApolloDataset(train_data_list, config, data_path, is_training =True)
+  train_dataset = ApolloDataset(train_data_list, config, data_path)
   val_dataset =  ApolloEvalDataset(val_data_list, config, data_path, is_val =True)
   test_dataset =  ApolloEvalDataset(test_data_list, config, data_path, is_val =False)
 

@@ -4,8 +4,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from .modules.bottleneck_block import Bottleneck, BottleneckDWP
-from .modules.transformer_block import GeneralTransformerBlock
+from .hrformer.modules.bottleneck_block import Bottleneck, BottleneckDWP
+from .hrformer.modules.transformer_block import GeneralTransformerBlock
 
 BN_MOMENTUM = 0.1
 

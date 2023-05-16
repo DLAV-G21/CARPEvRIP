@@ -24,6 +24,7 @@
 		"nb_links": 49,
 		"max_nb": 20,
 		"annotations_folder": "annotations",
+		"img_size": [3384, 2710],
 		"input_size": [640, 480],
 		"normalize_position": true
 	},
@@ -40,11 +41,13 @@
 		"epochs": 1,
 		"loss_keypoints": {
 			"cost_class": 0.2,
-			"cost_bbox": 1
+			"cost_bbox": 1,
+			"scale_factor": 1e9
 		},
 		"loss_links": {
 			"cost_class": 0.2,
-			"cost_bbox": 1
+			"cost_bbox": 1,
+			"scale_factor": 1e9
 		},
 		"optimizer": {
 			"name": "adamw",
