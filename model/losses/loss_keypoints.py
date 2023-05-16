@@ -56,7 +56,7 @@ class LossKeypoints(nn.Module):
             indices = self.matcher(predicted_keypoints, targeted_keypoints)
             predicted_keypoints = predicted_keypoints.flatten(0,1)[indices[1].flatten(0,1),:].view(bs,num_targets,-1)
 
-        distance = self.compute_distance(predicted_keypoints, targeted_keypoints)
+        distance = self.compute_distance(predicted_keypoints, targeted_keypoints).view(targeted_keypoints.shape[:3])
         
         filter = self.get_class_from_target(targeted_keypoints).view(targeted_keypoints.shape[:3]) > 0
 
@@ -64,7 +64,7 @@ class LossKeypoints(nn.Module):
         sum_[sum_ < 1] = 1
 
         OKS_loss = torch.sum(nb_cars) - torch.sum(
-            torch.exp(- distance.view(targeted_keypoints.shape[:3]) / (scale.unsqueeze(2)**2 * self.scale_factor) ) * filter / sum_
+            torch.exp(- distance / (scale.unsqueeze(2)**2 * self.scale_factor) ) * filter / sum_
         )
 
         target_class = self.get_class_from_target(targeted_keypoints)

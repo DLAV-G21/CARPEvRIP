@@ -8,6 +8,7 @@
 #SBATCH --gres gpu:1
 #SBATCH --qos dlav
 #SBATCH --account civil-459-2023
+#SBATCH --time 3:00:00
 
 source ../venvs/venv-g21/bin/activate
 python3 train.py
