@@ -38,7 +38,7 @@
 		"batch_size": 8,
 		"train_backbone": false,
 		"clip_grad_value": 0.01,
-		"epochs": 1,
+		"epochs": 10,
 		"loss_keypoints": {
 			"cost_class": 0.2,
 			"cost_bbox": 1,
@@ -71,7 +71,7 @@
 			],
 			"mode": "max",
 			"patience": 2,
-			"nb_step": 10
+			"nb_step": 1
 		}
 	},
 	"data_augmentation": {
