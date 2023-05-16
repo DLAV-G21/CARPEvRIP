@@ -71,7 +71,7 @@
 			],
 			"mode": "max",
 			"patience": 2,
-			"nb_step": 19
+			"nb_step": 10
 		}
 	},
 	"data_augmentation": {
