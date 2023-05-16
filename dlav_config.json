@@ -1,7 +1,8 @@
 {
 	"name": "baseline",
 	"model": {
-		"pretrained": "model_saves/!",
+		"backbone_save": "model/model_saves/hrt_small_coco_384x288.pth",
+		"model_saves": "model/model_saves",
 		"bn_momentum": 0.1,
 		"decode_output": false,
 		"add_positional_encoding": true,
@@ -83,7 +84,6 @@
 		}
 	},
 	"logging": {
-		"log_dir": "log_dir",
-		"weight_dir": "model_saves"
+		"log_dir": "log_dir"
 	}
 }

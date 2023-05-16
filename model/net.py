@@ -12,6 +12,7 @@ class Net(nn.Module):
     def __init__(self, config):
         super().__init__()
 
+        self.name = config['name']
         self.epoch = 0
         self.best_result = -1
         self.backbone = self.Load_Backbones()
@@ -22,7 +23,7 @@ class Net(nn.Module):
             self.decoder = self.Load_Decoder(config)
         else:
             self.decoder = None
-        self.init_weights(config['model']['pretrained'])
+        self.init_weights(config['model']['backbone_save'], config['model']['model_saves'])
         self.train_backbone = config['training']['train_backbone']
         
     def Load_Backbones(self):
@@ -129,6 +130,7 @@ class Net(nn.Module):
     
     def init_weights(
         self,
+        backbone_save,
         pretrained="",
     ):
         for m in self.modules():
@@ -138,21 +140,21 @@ class Net(nn.Module):
                 nn.init.constant_(m.weight, 1)
                 nn.init.constant_(m.bias, 0)
         
-        if(pretrained is not False) and len(pretrained) > 0:
-            if pretrained.endswith('!'):
-                if os.path.isdir(pretrained[:-2]):
-                  files = [int(f[6:-4]) for f in os.listdir(pretrained[:-2]) if (
-                      f.startswith('model_') and 
-                      f.endswith('.pth') and 
-                      os.path.isfile(os.path.join(pretrained[:-2], f))
-                      )]
-                  
-                  if(len(files) > 0):
-                      pretrained = os.path.join(pretrained[:-2], f'model_{max(files)}.pth')
-                  else:
-                      pretrained = False
+        if len(pretrained) > 0:
+            pretrained = os.path.join(pretrained, self.name)
+            if os.path.isdir(pretrained):
+                files = [int(f[6:-4]) for f in os.listdir(pretrained) if (
+                    f.startswith('model_') and 
+                    f.endswith('.pth') and 
+                    os.path.isfile(os.path.join(pretrained, f))
+                    )]
+                
+                if(len(files) > 0):
+                    pretrained = os.path.join(pretrained, f'model_{max(files)}.pth')
                 else:
                     pretrained = False
+            else:
+                pretrained = False
 
         if os.path.isfile(pretrained):
             print('load :', pretrained)
@@ -172,7 +174,7 @@ class Net(nn.Module):
             print('init_weights')
             if(pretrained is not False) and len(pretrained) > 0:
                 raise ValueError('The given pretrained model file doesn\'t exist :', pretrained)
-            self.backbone.init_weights("hrt_small_coco_384x288.pth")
+            self.backbone.init_weights(backbone_save)
 
     def save_weights(self, filename):
         torch.save(self.state_dict(), filename)

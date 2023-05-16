@@ -9,6 +9,7 @@ class Trainer():
 
     def __init__(
             self,
+            save,
             model,
             decoder,
             loss_keypoints,
@@ -21,7 +22,7 @@ class Trainer():
             val_loader,
             writer
             ):
-        
+        self.save = save
         self.model = model
         self.decoder = decoder
         self.loss_keypoints = loss_keypoints
@@ -36,14 +37,12 @@ class Trainer():
         
     def train(
             self,
-            epoch=0,
-            PATH='model'
+            epoch=0
             ):
-        if not os.path.isdir(PATH):
-            os.makedirs(PATH)
         # If the path does not exists, create it
+        if not os.path.isdir(self.save):
+            os.makedirs(self.save)
         
-
         # If the learning rate scheduler is not empty
         if self.lr_scheduler is not None:
             for _ in range(self.model.epoch):
@@ -58,7 +57,7 @@ class Trainer():
             # update the epoch value
             self.model.epoch = epoch_ + 1
             # Save the model
-            self.model.save_weights(os.path.join(PATH, f'model_{self.model.epoch}.pth'))
+            self.model.save_weights(os.path.join(self.save, f'model_{self.model.epoch}.pth'))
 
             # Create an instance of the CocoEvaluator class to be used for evaluation
             coco_evaluator = CocoEvaluator(self.eval_data.dataset.coco, ["keypoints"])
@@ -70,7 +69,7 @@ class Trainer():
                 # If the result is better than the best result
                 if(self.model.best_result <= result):
                     # Save the model
-                    torch.save(self.model.state_dict(), os.path.join(PATH, 'best_result.pth'))
+                    self.model.save_weights(os.path.join(self.save, 'best_result.pth'))
 
             # If the learning rate scheduler is not empty
             if self.lr_scheduler is not None:

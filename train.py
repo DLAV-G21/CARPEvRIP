@@ -2,6 +2,7 @@ import argparse
 import os
 import sys
 import json
+from datetime import datetime
 from model.net import Net
 from model.decoder import Decoder
 from model.losses.loss_keypoints import LossKeypoints
@@ -10,13 +11,30 @@ from dataset import get_dataloaders
 from trainer import Trainer
 from torch.utils.tensorboard import SummaryWriter
 
-def load(ROOT_PATH = '/home/plumey', setup_file_name ='dlav_config.json'):
+def load(ROOT_PATH = '/home/plumey', setup_file_name ='dlav_config.json', override = False):
     if not os.path.isfile(setup_file_name):
         raise ValueError('config file does\'t exist :', setup_file_name)
     with open(setup_file_name) as setup_file:
         config = json.load(setup_file)
 
+    save = os.path.join(ROOT_PATH, config['model']['model_saves'])
+    if not os.path.isdir(save):
+        os.makedirs(save)
+    save = os.path.join(save, config['name'])
+
+    if (not override) and os.path.isdir(save):
+        timestamp = datetime.now().strftime('_%Y_%m_%d_%H_%M_%S')
+        save += timestamp
+        config['name'] += timestamp
+
+    if not os.path.isdir(save):
+        os.makedirs(save)
+    with open(os.path.join(save, 'config.json'), "w") as outfile:
+        outfile.write(json.dumps(config))
+
     config['model']['pretrained'] = os.path.join(ROOT_PATH, config['model']['pretrained'])
+    config['model']['backbone_save'] = os.path.join(ROOT_PATH, config['model']['backbone_save'])
+    config['model']['model_saves'] = os.path.join(ROOT_PATH, config['model']['model_saves'])
     config['logging']['log_dir'] = os.path.join(ROOT_PATH, config['logging']['log_dir'])
     config['logging']['weight_dir'] = os.path.join(ROOT_PATH, config['logging']['weight_dir'])
     
@@ -32,12 +50,12 @@ def load(ROOT_PATH = '/home/plumey', setup_file_name ='dlav_config.json'):
     decoder = Decoder(threshold = config['decoder']['threshold'], max_distance = config['decoder']['max_distance'], nbr_max_car = config['dataset']['max_nb'], use_matcher = config['model']['use_matcher'], nb_keypoints = config['dataset']['nb_keypoints'])
     
     model.to(device)
-    trainer = Trainer(model, decoder, loss_keypoints, loss_links, optimizer, lr_scheduler, config['training']['clip_grad_value'], device, train_loader, val_loader, writer = writer)
+    trainer = Trainer(save, model, decoder, loss_keypoints, loss_links, optimizer, lr_scheduler, config['training']['clip_grad_value'], device, train_loader, val_loader, writer = writer)
 
     return trainer, config
 
 def train(trainer, config):
-    trainer.train(epoch = config['training']['epochs'], PATH = config['logging']['weight_dir'])
+    trainer.train(epoch = config['training']['epochs'])
 
 def main(ROOT_PATH, setup_file_name):
     try:
@@ -53,5 +71,6 @@ if __name__ == '__main__' :
     parser = argparse.ArgumentParser()
     parser.add_argument("root", help="path to the root of the project", required=True)
     parser.add_argument("--config", help="path to the config file", default="dlav_config.json", required=False)
+    parser.add_argument("-o", "--override", help="override or continue traning", default=False, required=False)
     args = parser.parse_args()
     main(args.ROOT_PATH, args.setup_file_name)

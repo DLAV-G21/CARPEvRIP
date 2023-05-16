@@ -14,7 +14,12 @@ def load(ROOT_PATH = '/home/plumey', setup_file_name ='dlav_config.json', image 
         raise ValueError('config file does\'t exist :', setup_file_name)
     with open(setup_file_name) as setup_file:
         config = json.load(setup_file)
+        
     config['model']['pretrained'] = os.path.join(ROOT_PATH, config['model']['pretrained'])
+    config['model']['backbone_save'] = os.path.join(ROOT_PATH, config['model']['backbone_save'])
+    config['model']['model_saves'] = os.path.join(ROOT_PATH, config['model']['model_saves'])
+    config['logging']['log_dir'] = os.path.join(ROOT_PATH, config['logging']['log_dir'])
+    config['logging']['weight_dir'] = os.path.join(ROOT_PATH, config['logging']['weight_dir'])
 
     model = Net(config)
     device = get_accelerator_device_from_args(config)
