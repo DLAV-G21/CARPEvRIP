@@ -67,8 +67,8 @@ def main(ROOT_PATH, setup_file_name):
 
 if __name__ == '__main__' :
     parser = argparse.ArgumentParser()
-    parser.add_argument("root", help="path to the root of the project", required=True)
-    parser.add_argument("--config", help="path to the config file", default="dlav_config.json", required=False)
-    parser.add_argument("-o", "--override", help="override or continue traning", default=False, required=False)
+    parser.add_argument("root", help="path to the root of the project")
+    parser.add_argument("--config", help="path to the config file", default="dlav_config.json")
+    parser.add_argument("-o", "--override", help="override or continue traning", default=False)
     args = parser.parse_args()
     main(args.ROOT_PATH, args.setup_file_name)

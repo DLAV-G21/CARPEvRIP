@@ -79,11 +79,11 @@ def main(ROOT_PATH, image, setup_file_name, json_out, img_out):
 
 if __name__ == '__main__' :
     parser = argparse.ArgumentParser()
-    parser.add_argument("root", help="path to the root of the project", required=True)
-    parser.add_argument("image", help="path to images directory", required=True)
-    parser.add_argument("--config", help="path to the config file", default="dlav_config.json", required=False)
-    parser.add_argument("-j", "--json", help="path to the output file", default=None, required=False)
-    parser.add_argument("-o", "--out", help="path to the output images directory", default=None, required=False)
-    parser.add_argument("-a", "--anotation", help="path to the anotation file", default=None, required=False)
+    parser.add_argument("root", help="path to the root of the project")
+    parser.add_argument("image", help="path to images directory")
+    parser.add_argument("--config", help="path to the config file", default="dlav_config.json")
+    parser.add_argument("-j", "--json", help="path to the output file", default=None)
+    parser.add_argument("-o", "--out", help="path to the output images directory", default=None)
+    parser.add_argument("-a", "--anotation", help="path to the anotation file", default=None)
     args = parser.parse_args()
     main(args.root, args.image, args.config, args.json, args.out, args.anotation)
