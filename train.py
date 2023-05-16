@@ -71,4 +71,4 @@ if __name__ == '__main__' :
     parser.add_argument("--config", help="path to the config file", default="dlav_config.json")
     parser.add_argument("-o", "--override", help="override or continue traning", default=False)
     args = parser.parse_args()
-    main(args.ROOT_PATH, args.setup_file_name)
+    main(args.root, args.config, args.override)
