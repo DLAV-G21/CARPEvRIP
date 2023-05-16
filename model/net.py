@@ -174,6 +174,8 @@ class Net(nn.Module):
             print('init_weights')
             if(pretrained is not False) and len(pretrained) > 0:
                 raise ValueError('The given pretrained model file doesn\'t exist :', pretrained)
+            if not os.path.isfile(backbone_save):
+                raise ValueError('The given backbone_save file doesn\'t exist :', backbone_save)
             self.backbone.init_weights(backbone_save)
 
     def save_weights(self, filename):
