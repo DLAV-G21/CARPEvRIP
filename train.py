@@ -55,9 +55,9 @@ def load(ROOT_PATH = '/home/plumey', setup_file_name ='dlav_config.json', overri
 def train(trainer, config):
     trainer.train(epoch = config['training']['epochs'])
 
-def main(ROOT_PATH, setup_file_name):
+def main(ROOT_PATH, setup_file_name, override):
     try:
-        trainer, config = load(ROOT_PATH, setup_file_name)
+        trainer, config = load(ROOT_PATH, setup_file_name, override)
         train(trainer, config)
         trainer.writer.close()
     except:
