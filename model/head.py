@@ -19,6 +19,8 @@ class Head(nn.Module):
         super().__init__()
         self.normalize_position = normalize_position
         self.use_matcher = use_matcher
+        self.nbr_points = nbr_points
+        self.nbr_variable = nbr_variable
         #Sets the size of the neck (the middle layer) to 1024
         neck_size = 1024
         #Sets the size of the embeddings to 256

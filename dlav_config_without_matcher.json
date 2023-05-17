@@ -1,5 +1,5 @@
 {
-	"name": "baseline_with_matcher",
+	"name": "baseline_without_matcher",
 	"model": {
 		"backbone_save": "model/model_saves/hrt_small_coco_384x288.pth",
 		"model_saves": "model/model_saves",
@@ -8,7 +8,7 @@
 		"add_positional_encoding": true,
 		"nhead": 4,
 		"num_layers": 6,
-		"use_matcher": true
+		"use_matcher": false
 	},
 	"decoder":{
 		"threshold" : 0.15,
