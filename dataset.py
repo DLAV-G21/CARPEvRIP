@@ -186,7 +186,6 @@ class ApolloEvalDataset(Dataset):
   
   def __getitem__(self, idx):
     img_name = self.dataset[idx][1]["file_name"]
-    ds_annot = self.dataset[idx]
     img = np.array(Image.open(os.path.join(self.img_path, img_name)))
     list_transform = [al.augmentations.geometric.resize.Resize(height=self.image_size[1], width=self.image_size[0],interpolation=cv2.INTER_CUBIC,always_apply=True, p=1.0)]
     list_transform.append(al.Normalize(mean=self.mean, std=self.std))
@@ -196,8 +195,7 @@ class ApolloEvalDataset(Dataset):
     transformed = composition(image=img)
     transformed_image = transformed['image']
     
-
-    return transformed_image, self.dataset[idx][1]["id"], [ds_annot]
+    return transformed_image, self.dataset[idx][1]["id"]
 
 class ApolloDataset(Dataset):
   def __init__(self, data_list, config, root_path):
