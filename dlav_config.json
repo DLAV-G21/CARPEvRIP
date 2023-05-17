@@ -32,7 +32,7 @@
 		"use_cuda" : true,
 		"num_gpu": 1,
 		"specific_gpu": 1,
-		"num_workers": 8
+		"num_workers": 4
 	},
 	"training": {
 		"batch_size": 8,
