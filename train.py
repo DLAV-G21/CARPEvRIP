@@ -26,6 +26,8 @@ def load(ROOT_PATH = '/home/plumey', setup_file_name ='dlav_config.json', overri
         timestamp = datetime.now().strftime('_%Y_%m_%d_%H_%M_%S')
         save += timestamp
         config['name'] += timestamp
+    print(f'name :',config['name'])
+    print(f'save :',save)
 
     if not os.path.isdir(save):
         os.makedirs(save)
