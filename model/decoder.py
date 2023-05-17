@@ -166,11 +166,12 @@ class Decoder():
                             for skeletons_1_id in skeletons_with_keypoint_u_v:
                                 for skeletons_2_id in skeletons_with_keypoint_u_v:
                                     if(skeletons_1_id < skeletons_2_id):
-                                        if(skeletons[skeletons_1_id][1] == skeletons[skeletons_2_id][1]):
-                                            if(skeletons[skeletons_1_id][0] > skeletons[skeletons_2_id][0]):
-                                                skeletons_to_remove.add(skeletons_2_id)
-                                            else:
-                                                skeletons_to_remove.add(skeletons_1_id)
+                                        if len(skeletons[skeletons_1_id][1]) == len(skeletons[skeletons_2_id][1]):
+                                            if(skeletons[skeletons_1_id][1] == skeletons[skeletons_2_id][1]):
+                                                if(skeletons[skeletons_1_id][0] > skeletons[skeletons_2_id][0]):
+                                                    skeletons_to_remove.add(skeletons_2_id)
+                                                else:
+                                                    skeletons_to_remove.add(skeletons_1_id)
 
                             skeletons = [s for i,s in enumerate(skeletons) if (i not in skeletons_to_remove)]
 
@@ -231,8 +232,6 @@ class Decoder():
                         keypoints_[(k-1)*3+1] = keypoint_position[1]
                         keypoints_[(k-1)*3+2] = 2.0
 
-                    print(skeleton)
-
                     # Create the element object
                     element = {
                         'image_id' : image_id,
@@ -262,19 +261,23 @@ class Decoder():
 
         result = []
         for b in range(keypoints.shape[0]):
-
+            print(keypoints_position[b])
+            print(keypoints_probability[b])
             # Get dict for keypoints and links
             keypoints = get_dict(keypoints_class[b], keypoints_probability[b], keypoints_position[b])
             links = get_dict(links_class[b], links_probability[b], links_position[b])
-
+            print(links_probability[b])
+            print("keypoints", sum([len(v) for v in keypoints.values()]))
+            print("links",sum([len(v) for v in links.values()]))
+            print("listing all skeletons...")
             # Generate all possible skeletons with one keypoint
             skeletons = list_all_skeletons(keypoints)
-
+            print("merging skeletons...")
             # Merge skeletons with bones_list
             skeletons = merge(bones_list, keypoints, links, skeletons)
 
             image_id = b if images_id is None else images_id[b]
-
+            print("filtering...")
             # Filter out skeletons
             detected_skeletons = filter(skeletons, keypoints, image_id)
 

@@ -54,10 +54,10 @@ def load(ROOT_PATH = '/home/plumey', setup_file_name ='dlav_config.json', overri
 
     return trainer, config
 
-def train(trainer, config,eval_only):
-    trainer.train(epoch = config['training']['epochs'],eval_only=eval_only)
+def train(trainer, config,train_only,eval_only):
+    trainer.train(epoch = config['training']['epochs'],train_only=train_only,eval_only=eval_only)
 
-def main(ROOT_PATH, setup_file_name, override, eval_only):
+def main(ROOT_PATH, setup_file_name, override,train_only, eval_only):
     """try:
         trainer, config = load(ROOT_PATH, setup_file_name, override)
         train(trainer, config)
@@ -68,7 +68,7 @@ def main(ROOT_PATH, setup_file_name, override, eval_only):
         f.close()
         """
     trainer, config = load(ROOT_PATH, setup_file_name, override)
-    train(trainer, config, eval_only=eval_only)
+    train(trainer, config, train_only=train_only, eval_only=eval_only)
     trainer.writer.close()
 
 if __name__ == '__main__' :
@@ -77,5 +77,6 @@ if __name__ == '__main__' :
     parser.add_argument("--config", help="path to the config file", default="dlav_config.json")
     parser.add_argument("-o", "--override", help="override or continue traning", action='store_true')
     parser.add_argument("-e","--eval_only",help="if we only need to perform the eval step",action="store_true")
+    parser.add_argument("-t","--train_only",help="if we only need to perform train steps",action="store_true")
     args = parser.parse_args()
-    main(args.root, args.config, args.override,args.eval_only)
+    main(args.root, args.config, args.override,args.train_only, args.eval_only)

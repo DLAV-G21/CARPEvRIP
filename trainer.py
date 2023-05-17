@@ -38,6 +38,7 @@ class Trainer():
     def train(
             self,
             epoch=0,
+            train_only=False,
             eval_only=False
             ):
         # If the path does not exists, create it
@@ -65,7 +66,7 @@ class Trainer():
             coco_evaluator = CocoEvaluator(self.eval_data.dataset.coco, ["keypoints"])
 
             # If the coco evaluator is not empty
-            if coco_evaluator is not None:
+            if coco_evaluator is not None and not train_only:
                 # Run the evaluation step
                 result = self.eval_step(self.eval_data, coco_evaluator, self.writer, epoch_)
                 # If the result is better than the best result

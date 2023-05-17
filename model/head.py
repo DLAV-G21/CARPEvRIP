@@ -105,6 +105,7 @@ class Head(nn.Module):
 
         #Expands the queries to match the size of x
         query = self.queries.expand(x.shape[0], *self.queries.shape)
+        assert(torch.all(query[0]==query[1]))
         #Applies the transformer decoder
         output = self.transformer_decoder(query, x)
 
