@@ -132,9 +132,9 @@ class Trainer():
             # Summarize the results
             coco_evaluator.summarize()
             # If return_skeletons is true, return the coco_evaluator stats for keypoints
-            return coco_evaluator.coco_eval['keypoints'].stats[0] \
+            return skeletons_ \
                 if return_skeletons else \
-                skeletons_
+                coco_evaluator.coco_eval['keypoints'].stats[0]
         # If return_skeletons is true, return the skeletons
         elif return_skeletons:
             return skeletons_
