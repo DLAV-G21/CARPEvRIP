@@ -3,7 +3,7 @@ import torch.nn as nn
 from .matching import HungarianMatcher
 
 class LossKeypoints(nn.Module):
-    def __init__(self, nbr_variable, scale_factor = 1, cost_class: float = 1, cost_bbox: float = 1, max_distance = 100, use_matcher = True):
+    def __init__(self, nbr_variable, scale_factor = 1, cost_class: float = 1, cost_distance: float = 1, cost_OKS: float = 1, max_distance = 100, use_matcher = True):
         """Creates the matcher
 
         Params:
@@ -13,7 +13,8 @@ class LossKeypoints(nn.Module):
         super().__init__()
         self.nbr_variable = nbr_variable
         self.cost_class = cost_class
-        self.cost_bbox = cost_bbox
+        self.cost_distance = cost_distance
+        self.cost_OKS = cost_OKS
         self.use_matcher = use_matcher
         self.scale_factor = scale_factor
 
@@ -22,9 +23,9 @@ class LossKeypoints(nn.Module):
             self.get_class_distribution_from_output,
             self.get_position_from_target,
             self.get_class_from_target,
-            cost_class, cost_bbox, max_distance)  if use_matcher else None
+            cost_class, cost_distance+cost_OKS, max_distance)  if use_matcher else None
         self.criterion = nn.CrossEntropyLoss() if use_matcher else nn.BCEWithLogitsLoss()
-        assert cost_class != 0 or cost_bbox != 0, "all costs cant be 0"
+        assert cost_class != 0 or (cost_distance+cost_OKS) != 0, "all costs cant be 0"
 
     def get_class_distribution_from_output(self, keypoint):
         return keypoint[:,:,self.nbr_variable:] if self.use_matcher else keypoint[:,:,self.nbr_variable]
@@ -63,6 +64,7 @@ class LossKeypoints(nn.Module):
         sum_ = torch.sum(filter, dim=2).unsqueeze(2)
         sum_[sum_ < 1] = 1
 
+        distance_loss = torch.sum(distance / (scale.unsqueeze(2)**2 * self.scale_factor) * filter)
         OKS_loss = torch.sum(nb_cars) - torch.sum(
             torch.exp(- distance / (scale.unsqueeze(2)**2 * self.scale_factor) ) * filter / sum_
         )
@@ -75,4 +77,4 @@ class LossKeypoints(nn.Module):
             target_class.long() if self.use_matcher else target_class
         )
 
-        return self.cost_bbox * OKS_loss + self.cost_class * classification_loss
+        return  self.cost_distance * distance_loss + self.cost_OKS * OKS_loss + self.cost_class * classification_loss

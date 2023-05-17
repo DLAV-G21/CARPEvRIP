@@ -41,13 +41,15 @@
 		"epochs": 10,
 		"loss_keypoints": {
 			"cost_class": 0.2,
-			"cost_bbox": 1,
-			"scale_factor": 1e9
+			"cost_distance": 1,
+			"cost_OKS": 0,
+			"scale_factor": 100
 		},
 		"loss_links": {
 			"cost_class": 0.2,
-			"cost_bbox": 1,
-			"scale_factor": 1e9
+			"cost_distance": 1,
+			"cost_OKS": 0,
+			"scale_factor": 100
 		},
 		"optimizer": {
 			"name": "adamw",
