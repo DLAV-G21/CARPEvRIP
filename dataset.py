@@ -12,7 +12,6 @@ import os
 import json
 from pycocotools.coco import COCO
 from PIL import Image
-from functools import partial
 
 
 class ApolloInference(Dataset):
@@ -420,11 +419,7 @@ class ApolloDataset(Dataset):
 
     return cur_name, transformed_image, keypoints, scale, links, torch.Tensor([nb_car]).int()
 
-def collate_fn(data, ann =True):
-  if ann:
-    img, ids, annots = [d[0] for d in data],[d[1] for d in data],[d[2] for d in data]
-    return torch.utils.data.default_collate(img), ids, annots
-  else:
+def collate_fn(data):
     img, ids = [d[0] for d in data],[d[1] for d in data]
     return torch.utils.data.default_collate(img), ids
 
@@ -445,10 +440,8 @@ def get_dataloaders(config, data_path):
 def load_dataloader_inference(config, root_path, image_path, annotations_file=None):
     if annotations_file is None:
       dataset = ApolloInference(root_path, image_path,config)
-      ann =False 
     else:
       data_list = [ f for f in os.listdir(image_path) if os.path.isfile(os.path.join(image_path, f))]
       dataset =  ApolloEvalDataset(data_list, config, root_path, is_val=False, is_inference=True, inference_path=annotations_file, inference_image_path=image_path)
-      ann = True
     
-    return DataLoader(dataset, collate_fn=partial(collate_fn, ann=ann), batch_size=config['training']['batch_size'],num_workers=config['hardware']['num_workers'],shuffle=False)
+    return DataLoader(dataset, collate_fn=collate_fn, batch_size=config['training']['batch_size'],num_workers=config['hardware']['num_workers'],shuffle=False)
