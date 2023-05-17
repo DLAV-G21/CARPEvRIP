@@ -47,6 +47,7 @@ def to_json(results):
     return out
 
 def save_json(results, json_out):
+    #TODO 0-1 -> img size
     with open(json_out, "w") as outfile:
         outfile.write(json.dumps(results))
 

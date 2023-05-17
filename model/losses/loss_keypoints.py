@@ -64,7 +64,7 @@ class LossKeypoints(nn.Module):
         sum_ = torch.sum(filter, dim=2).unsqueeze(2)
         sum_[sum_ < 1] = 1
 
-        distance_loss = torch.sum(distance / (scale.unsqueeze(2)**2 * self.scale_factor) * filter)
+        distance_loss = torch.sum(distance * filter / sum_)
         OKS_loss = torch.sum(nb_cars) - torch.sum(
             torch.exp(- distance / (scale.unsqueeze(2)**2 * self.scale_factor) ) * filter / sum_
         )

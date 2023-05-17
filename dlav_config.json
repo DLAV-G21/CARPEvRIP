@@ -40,13 +40,13 @@
 		"clip_grad_value": 0.01,
 		"epochs": 10,
 		"loss_keypoints": {
-			"cost_class": 0.2,
+			"cost_class": 1,
 			"cost_distance": 1,
 			"cost_OKS": 0,
 			"scale_factor": 100
 		},
 		"loss_links": {
-			"cost_class": 0.2,
+			"cost_class": 1,
 			"cost_distance": 1,
 			"cost_OKS": 0,
 			"scale_factor": 100
