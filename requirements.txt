@@ -309,7 +309,6 @@ xlrd
 yellowbrick
 yfinance
 zipp
-dlib
 timm
 einops
 pycocotools
