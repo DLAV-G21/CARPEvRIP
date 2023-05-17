@@ -16,6 +16,7 @@ class Head(nn.Module):
         use_matcher = True,
     ):
         super().__init__()
+        self.nbr_variable = nbr_variable
         #Sets the size of the neck (the middle layer) to 1024
         neck_size = 1024
         #Sets the size of the embeddings to 256
@@ -118,6 +119,7 @@ class Head(nn.Module):
 
         #Applies a sequence of operations on the output of the transformer decoder
         output = self.final(output.permute(0,2,1)).permute(0,2,1)
+        output[:,:,self.nbr_variable:] = output[:,:,self.nbr_variable:].sigmoid()
         
         #Returns the output
         return output

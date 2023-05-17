@@ -41,12 +41,10 @@ class LossKeypoints(nn.Module):
     
     def compute_distance(self, predicted_keypoints, targeted_keypoints):
         #TODO ou pas
-        return torch.sqrt(
-                torch.sum((
+        return  torch.sum(torch.abs(
                     self.get_position_from_output(predicted_keypoints) - 
                     self.get_position_from_target(targeted_keypoints)
-                ) ** 2, dim=2)
-            )
+                ), dim=2)
     
     def forward(self, predicted_keypoints, targeted_keypoints, scale, nb_cars):
 
@@ -59,12 +57,12 @@ class LossKeypoints(nn.Module):
 
         distance = self.compute_distance(predicted_keypoints, targeted_keypoints).view(targeted_keypoints.shape[:3])
         
-        filter = self.get_class_from_target(targeted_keypoints).view(targeted_keypoints.shape[:3]) > 0
+        filter = (self.get_class_from_target(targeted_keypoints).view(targeted_keypoints.shape[:3]) > 0).int()
 
         sum_ = torch.sum(filter, dim=2).unsqueeze(2)
         sum_[sum_ < 1] = 1
 
-        distance_loss = torch.sum(distance * filter / sum_)
+        distance_loss = torch.sum(distance * filter)/filter.sum()
         OKS_loss = torch.sum(nb_cars) - torch.sum(
             torch.exp(- distance / (scale.unsqueeze(2)**2 * self.scale_factor) ) * filter / sum_
         )
