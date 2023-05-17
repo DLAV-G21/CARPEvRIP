@@ -323,7 +323,7 @@ class ApolloDataset(Dataset):
 
     for i in range(nb_car):
       label_car =[int(j.split('-')[1]) for j in labels if int(j.split('-')[0])==i]
-
+      cpt = 0
       for cls, (a,b) in enumerate(lst_links):
         if a in label_car and b in label_car:
           idx1 = label_car.index(a)
@@ -331,7 +331,8 @@ class ApolloDataset(Dataset):
           pt10, pt11 = kps[idx1]
           pt20, pt21 = kps[idx2]
           if self.use_matcher:
-            lst[i,cls,:] = torch.Tensor([cls+1, pt10,pt11, pt20, pt21])  
+            lst[i,cpt,:] = torch.Tensor([cls+1, pt10,pt11, pt20, pt21])  
+            cpt += 1
           else:
             lst[i,cls,:] = torch.Tensor([1, pt10, pt11, pt20, pt21])
     return lst 
@@ -342,13 +343,15 @@ class ApolloDataset(Dataset):
       keypoints[:,:,0]=0
       
     for i in range(nb_car):
+      cpt = 0
       for idx, label in enumerate(labels):
         lab = label.split('-')
         if int(lab[0]) == i:
           kp = kps[idx]
           x, y = kp[0],kp[1]
           if self.use_matcher:
-            keypoints[i,int(lab[1])-1,:]=torch.Tensor([int(lab[1]),x,y])
+            keypoints[i,cpt,:]=torch.Tensor([int(lab[1]),x,y])
+            cpt+=1
           else:
              keypoints[i,int(lab[1])-1,:]=torch.Tensor([1,x,y])
     return keypoints 
