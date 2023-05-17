@@ -69,6 +69,6 @@ if __name__ == '__main__' :
     parser = argparse.ArgumentParser()
     parser.add_argument("root", help="path to the root of the project")
     parser.add_argument("--config", help="path to the config file", default="dlav_config.json")
-    parser.add_argument("-o", "--override", help="override or continue traning", default=False)
+    parser.add_argument("-o", "--override", help="override or continue traning", action='store_true')
     args = parser.parse_args()
     main(args.root, args.config, args.override)
