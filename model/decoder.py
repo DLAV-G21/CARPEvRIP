@@ -9,7 +9,7 @@ from utils.openpifpaf_helper import CAR_SKELETON_24, CAR_SKELETON_66
 
 class Decoder():
     
-    def __init__(self, threshold = 0.5, max_distance = 100, nbr_max_car = 20, use_matcher = True, nb_keypoints = 24):
+    def __init__(self, threshold = 0.5, max_distance = 0.2, nbr_max_car = 20, use_matcher = True, nb_keypoints = 24):
         self.threshold = threshold
         self.min_distance = max_distance
         self.nbr_max_car = nbr_max_car
@@ -35,8 +35,8 @@ class Decoder():
     
     def get_bones_list(self):
         if(self.nb_keypoints == 24):
-            return CAR_SKELETON_24, 24
-        return CAR_SKELETON_66, 66
+            return CAR_SKELETON_24
+        return CAR_SKELETON_66
 
     def __call__(self, x, images_id=None):
         return self.forward(x, images_id)
@@ -66,7 +66,7 @@ class Decoder():
         )
 
         # Get the bones list from the keypoints
-        bones_list, nbr_keypoints = self.get_bones_list()
+        bones_list = self.get_bones_list()
         
         def get_dict(classs_, probabilitys_, positions_):
             # A dictionary to store the values
@@ -104,6 +104,7 @@ class Decoder():
         def merge(bones_list, keypoints, links, skeletons):
             # For each link_class, keypoint_u_class, keypoint_v_class in bones_list
             for link_class, (keypoint_u_class, keypoint_v_class) in enumerate(bones_list):
+                link_class += 1
                 # If link_class exists in links and each keypoint_u_class and keypoint_v_class exists in keypoints
                 if(link_class in links) and (keypoint_u_class in keypoints) and (keypoint_v_class in keypoints):
                     # For each link in the link_class
@@ -173,6 +174,7 @@ class Decoder():
 
                             skeletons = [s for i,s in enumerate(skeletons) if (i not in skeletons_to_remove)]
 
+
             # Return all skeletons
             return skeletons
 
@@ -183,11 +185,9 @@ class Decoder():
             best = -1
 
             # Iterate through all the keypoints
-            for i, keypoint in enumerate(keypoints):
-                # Get the keypoint's position
-                keypoint_position, _ = keypoint
+            for i, (keypoint_position, _) in enumerate(keypoints):
                 # Calculate the distance between the link position and the keypoint
-                distance = np.sqrt(np.sum(abs(keypoint_position - link_position)))
+                distance = np.sqrt(np.sum((keypoint_position - link_position)**2))
 
                 # Check if the distance is less than the min_distance
                 if(distance < min_distance):
@@ -206,12 +206,14 @@ class Decoder():
             used_keypoints = {}
             # Variable to keep track of the id
             id = 1
+            print(len(skeletons))
+            ordered_skeletons = sorted(skeletons, key=lambda x: (len(x[1]), x[0]), reverse=True)
             # Iterate over the skeletons sorted by their length and score
-            for (skeleton_probability, skeleton) in sorted(skeletons, key=lambda x: (len(x[1]), x[0]), reverse=True):
+            for (skeleton_probability, skeleton) in ordered_skeletons:
                 # Check if the keypoints of this skeleton have already been used
                 if(all([(k not in used_keypoints) or (skeleton[k] not in used_keypoints[k]) for k in skeleton])):
                     # Array to store the coordinates of each keypoint
-                    keypoints_ = list(np.zeros(nbr_keypoints*3))
+                    keypoints_ = list(np.zeros(self.nb_keypoints*3))
 
                     # Iterate over the different keypoints
                     for k in skeleton:
@@ -223,10 +225,13 @@ class Decoder():
                         # Get the x and y coordinates of the keypoint
                         keypoint_position, _ = keypoints[k][skeleton[k]]
                         # Store the coordinates
+                        # TODO MULTIPLY BY SCALE OF IMAGE
+                        # TODO the right way
                         keypoints_[(k-1)*3] = keypoint_position[0]
                         keypoints_[(k-1)*3+1] = keypoint_position[1]
                         keypoints_[(k-1)*3+2] = 2.0
 
+                    print(skeleton)
 
                     # Create the element object
                     element = {
@@ -240,6 +245,7 @@ class Decoder():
                         'keypoints': keypoints_,
                         'segmentation':[],
                     }
+                    id+=1
 
                     # Append the element object to the list of detected_elements
                     detected_elements.append(element)
@@ -269,7 +275,7 @@ class Decoder():
 
             image_id = b if images_id is None else images_id[b]
 
-            # Filter out skeletons with wrong number of keypoints
+            # Filter out skeletons
             detected_skeletons = filter(skeletons, keypoints, image_id)
 
             if len(detected_skeletons) <= 0:
@@ -282,7 +288,7 @@ class Decoder():
                     'id': image_id*10 if isinstance(image_id, int) else f'{image_id}{0}',
                     'bbox': [0,0,0,0],
                     'num_keypoints': 0,
-                    'keypoints': list(np.zeros(nbr_keypoints*3)),
+                    'keypoints': list(np.zeros(self.nb_keypoints*3)),
                     'segmentation':[],
                 }
 

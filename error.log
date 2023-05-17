@@ -1,2 +1,2 @@
 Failed :
-(<class 'KeyboardInterrupt'>, KeyboardInterrupt(), <traceback object at 0x0000024B9905A3C0>)
+(<class 'RuntimeError'>, RuntimeError('The size of tensor a (20) must match the size of tensor b (8) at non-singleton dimension 1'), <traceback object at 0x0000016CDB99BC00>)

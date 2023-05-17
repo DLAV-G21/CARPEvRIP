@@ -14,13 +14,15 @@ class Head(nn.Module):
         nhead = 4,
         num_layers = 3,
         use_matcher = True,
+        normalize_position=True
     ):
         super().__init__()
-        self.nbr_variable = nbr_variable
+        self.normalize_position = normalize_position
+        self.use_matcher = use_matcher
         #Sets the size of the neck (the middle layer) to 1024
         neck_size = 1024
         #Sets the size of the embeddings to 256
-        embed_size = 256
+        embed_size = 512
         #Sets the size of the postion to 30
         position_size = 30
 
@@ -53,30 +55,19 @@ class Head(nn.Module):
             nn.TransformerDecoderLayer(d_model=embed_size, nhead=nhead, batch_first=True),
             num_layers=num_layers)
 
-        #A sequence of operations on the output of the transformer decoder
-        self.final = nn.Sequential(
-            #Batch normalization with a momentum of 0.1
-            nn.BatchNorm1d(embed_size, momentum=bn_momentum),
-            #ReLU activation
-            nn.ReLU(),
-            #1d convolutional layer 
-            nn.Conv1d(
-                in_channels=embed_size,
-                out_channels=embed_size//2,
-                kernel_size=1
-            ),
-            #Batch normalization with a momentum of 0.1
-            nn.BatchNorm1d(embed_size//2, momentum=bn_momentum),
-            #ReLU activation
-            nn.ReLU(),
-            #1d convolutional layer 
-            nn.Conv1d(
-                in_channels=embed_size//2,
-                #Output channels will be the number of points plus one plus the number of variables if use matcher is true. Otherwise, it will be the number of variables plus one
-                out_channels=nbr_points + 1 + nbr_variable if use_matcher else nbr_variable + 1,
-                kernel_size=1
-            ),
-        )
+        self.final_classification = nn.Sequential(
+                nn.Linear(embed_size,self.nbr_points+1 if self.use_matcher else 1)
+            )
+
+        self.final_position = nn.Sequential(
+                nn.Linear(embed_size, embed_size),
+                nn.ReLU(),
+                nn.Linear(embed_size, embed_size),
+                nn.ReLU(),
+                nn.Linear(embed_size, embed_size),
+                nn.ReLU(),
+                nn.Linear(embed_size, nbr_variable)
+            )
 
     def cat_positional_encoding(self, x):
         #Gets the device and the data type of x
@@ -118,8 +109,8 @@ class Head(nn.Module):
         output = self.transformer_decoder(query, x)
 
         #Applies a sequence of operations on the output of the transformer decoder
-        output = self.final(output.permute(0,2,1)).permute(0,2,1)
-        output[:,:,self.nbr_variable:] = output[:,:,self.nbr_variable:].sigmoid()
-        
+        output_cls = self.final_classification(output)
+        output_pos = self.final_position(output).sigmoid() if self.normalize_position else self.final_position(output)
+        output = torch.cat([output_pos, output_cls],dim=2)
         #Returns the output
         return output

@@ -37,7 +37,8 @@ class Trainer():
         
     def train(
             self,
-            epoch=0
+            epoch=0,
+            eval_only=False
             ):
         # If the path does not exists, create it
         if not os.path.isdir(self.save):
@@ -52,12 +53,13 @@ class Trainer():
         # Iterate through the specified number of epochs
         for epoch_ in range(self.model.epoch, self.model.epoch + epoch):
             print('epoch :', epoch_)
-            # Perform the training step
-            self.train_step(self.train_data, self.writer, epoch_)
-            # update the epoch value
-            self.model.epoch = epoch_ + 1
-            # Save the model
-            self.model.save_weights(os.path.join(self.save, f'model_{self.model.epoch}.pth'))
+            if not eval_only:
+                # Perform the training step
+                self.train_step(self.train_data, self.writer, epoch_)
+                # update the epoch value
+                self.model.epoch = epoch_ + 1
+                # Save the model
+                self.model.save_weights(os.path.join(self.save, f'model_{self.model.epoch}.pth'))
 
             # Create an instance of the CocoEvaluator class to be used for evaluation
             coco_evaluator = CocoEvaluator(self.eval_data.dataset.coco, ["keypoints"])
@@ -75,6 +77,9 @@ class Trainer():
             if self.lr_scheduler is not None:
                 # Step the learning rate scheduler
                 self.lr_scheduler.step()
+
+            if eval_only:
+                return
 
     def eval(self):
         coco = self.eval_data.dataset.coco

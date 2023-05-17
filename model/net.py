@@ -105,6 +105,7 @@ class Net(nn.Module):
             nhead = config['model']['nhead'],
             num_layers = config['model']['num_layers'],
             use_matcher = config['model']['use_matcher'],
+            normalize_position = config["dataset"]["normalize_position"]
         )
 
     def Load_Decoder(self, config):
