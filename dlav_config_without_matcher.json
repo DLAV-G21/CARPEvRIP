@@ -38,7 +38,7 @@
 		"batch_size": 8,
 		"train_backbone": false,
 		"clip_grad_value": 10000,
-		"epochs": 10,
+		"epochs": 80,
 		"loss_keypoints": {
 			"cost_class": 1,
 			"cost_distance": 1,
