@@ -8,7 +8,8 @@
 		"add_positional_encoding": true,
 		"nhead": 4,
 		"num_layers": 6,
-		"use_matcher": false
+		"use_matcher": false,
+		"simple_neck": false
 	},
 	"decoder":{
 		"threshold" : 0.15,

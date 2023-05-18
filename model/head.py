@@ -9,20 +9,18 @@ class Head(nn.Module):
         nbr_max_car,
         nbr_points,
         nbr_variable,
-        bn_momentum = 0.1,
         add_positional_encoding = True,
         nhead = 4,
         num_layers = 3,
         use_matcher = True,
-        normalize_position=True
+        normalize_position=True,
+        neck_size = 1024,
     ):
         super().__init__()
         self.normalize_position = normalize_position
         self.use_matcher = use_matcher
         self.nbr_points = nbr_points
         self.nbr_variable = nbr_variable
-        #Sets the size of the neck (the middle layer) to 1024
-        neck_size = 1024
         #Sets the size of the embeddings to 256
         embed_size = 512
         #Sets the size of the postion to 30
@@ -80,10 +78,9 @@ class Head(nn.Module):
         #Creates a tensor with the range of x's shape[3]
         y_  = torch.tensor(range(x.shape[3]), dtype=dtype, device=device).expand(x.shape[0],1,x.shape[2],x.shape[3])
 
-        #Removes the last two shape of x
-        x = x[:,:-2,:,:]
-        #Concatenates x, x_, and y_
-        x = torch.cat((x, x_, y_), 1)
+        x[:,-2:-1,:,:] = x_
+        x[:,-1:,:,:] = y_
+
         #Reshapes x
         return x.view(*x.shape[0:2],-1).permute(0,2,1)
 

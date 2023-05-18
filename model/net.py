@@ -5,6 +5,7 @@ import torch.nn as nn
 from .hrformer.hrt import HighResolutionTransformer
 from .head import Head
 from .neck import Neck
+from .simple_neck import SimpleNeck
 from .decoder import Decoder
 
 class Net(nn.Module):
@@ -16,9 +17,9 @@ class Net(nn.Module):
         self.epoch = 0
         self.best_result = -1
         self.backbone = self.Load_Backbones()
-        self.neck = self.Load_Neck(self.backbone.pre_stage_channels)
-        self.keypoints = self.Load_Head(config, 2, config['dataset']['nb_keypoints'])
-        self.links = self.Load_Head(config, 4, config['dataset']['nb_links'])
+        self.neck = self.Load_Neck(config, self.backbone.pre_stage_channels)
+        self.keypoints = self.Load_Head(config, 2, config['dataset']['nb_keypoints'], self.neck.neck_size)
+        self.links = self.Load_Head(config, 4, config['dataset']['nb_links'], self.neck.neck_size)
         if(config['model']['decode_output']):
             self.decoder = self.Load_Decoder(config)
         else:
@@ -92,10 +93,12 @@ class Net(nn.Module):
         backbone = HighResolutionTransformer(cfg)
         return backbone
 
-    def Load_Neck(self, pre_stage_channels):
+    def Load_Neck(self, config, pre_stage_channels):
+        if(config['model']['simple_neck']):
+            SimpleNeck(pre_stage_channels)
         return Neck(pre_stage_channels)
 
-    def Load_Head(self, config, nbr_variable, nbr_points):
+    def Load_Head(self, config, nbr_variable, nbr_points, neck_size):
         return Head(
             nbr_max_car=config['dataset']['max_nb'],
             nbr_points=nbr_points,
@@ -105,7 +108,8 @@ class Net(nn.Module):
             nhead = config['model']['nhead'],
             num_layers = config['model']['num_layers'],
             use_matcher = config['model']['use_matcher'],
-            normalize_position = config["dataset"]["normalize_position"]
+            normalize_position = config["dataset"]["normalize_position"],
+            neck_size = neck_size,
         )
 
     def Load_Decoder(self, config):

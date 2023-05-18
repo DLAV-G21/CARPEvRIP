@@ -16,12 +16,13 @@ class Neck(nn.Module):
     ):
         super().__init__()
 
+        self.neck_size = 1024
         self.incre_modules, self.downsamp_modules = self._make_head(pre_stage_channels)
         
     def _make_head(self, pre_stage_channels):
         head_block = BottleneckDWP
-        head_channels = [32, 64, 128, 256]
-
+        head_channels = pre_stage_channels
+        
         # Increasing the #channels on each resolution
         # from C, 2C, 4C, 8C to 128, 256, 512, 1024
         incre_modules = []

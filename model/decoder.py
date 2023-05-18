@@ -207,7 +207,6 @@ class Decoder():
             used_keypoints = {}
             # Variable to keep track of the id
             id = 1
-            print(len(skeletons))
             ordered_skeletons = sorted(skeletons, key=lambda x: (len(x[1]), x[0]), reverse=True)
             # Iterate over the skeletons sorted by their length and score
             for (skeleton_probability, skeleton) in ordered_skeletons:
@@ -261,23 +260,15 @@ class Decoder():
 
         result = []
         for b in range(keypoints.shape[0]):
-            print(keypoints_position[b])
-            print(keypoints_probability[b])
             # Get dict for keypoints and links
             keypoints = get_dict(keypoints_class[b], keypoints_probability[b], keypoints_position[b])
             links = get_dict(links_class[b], links_probability[b], links_position[b])
-            print(links_probability[b])
-            print("keypoints", sum([len(v) for v in keypoints.values()]))
-            print("links",sum([len(v) for v in links.values()]))
-            print("listing all skeletons...")
             # Generate all possible skeletons with one keypoint
             skeletons = list_all_skeletons(keypoints)
-            print("merging skeletons...")
             # Merge skeletons with bones_list
             skeletons = merge(bones_list, keypoints, links, skeletons)
 
             image_id = b if images_id is None else images_id[b]
-            print("filtering...")
             # Filter out skeletons
             detected_skeletons = filter(skeletons, keypoints, image_id)
 
