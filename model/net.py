@@ -103,7 +103,6 @@ class Net(nn.Module):
             nbr_max_car=config['dataset']['max_nb'],
             nbr_points=nbr_points,
             nbr_variable=nbr_variable,
-            bn_momentum = config['model']['bn_momentum'],
             add_positional_encoding = config['model']['add_positional_encoding'],
             nhead = config['model']['nhead'],
             num_layers = config['model']['num_layers'],

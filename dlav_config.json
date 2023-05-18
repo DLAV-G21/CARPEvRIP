@@ -1,5 +1,5 @@
 {
-	"name": "baseline_with_matcher",
+	"name": "baseline_with_matcher_train_backbone",
 	"model": {
 		"backbone_save": "model/model_saves/hrt_small_coco_384x288.pth",
 		"model_saves": "model/model_saves",
@@ -9,7 +9,7 @@
 		"nhead": 4,
 		"num_layers": 6,
 		"use_matcher": true,
-		"simple_neck": false
+		"simple_neck": true
 	},
 	"decoder":{
 		"threshold" : 0.15,
@@ -37,7 +37,7 @@
 	},
 	"training": {
 		"batch_size": 8,
-		"train_backbone": false,
+		"train_backbone": true,
 		"clip_grad_value": 10000,
 		"epochs": 80,
 		"loss_keypoints": {

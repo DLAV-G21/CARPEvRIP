@@ -59,14 +59,14 @@ def save_img(results, ROOT_PATH, image, img_out, config):
 		[1, 1] if config['dataset']['normalize_position'] else config['dataset']['input_size']
     )
 
-def eval(trainer, config):
+def eval(trainer):
     results = trainer.eval()
     return to_json(results)
 
 def main(ROOT_PATH, image, setup_file_name, json_out, img_out):
     try:
         trainer, config = load(ROOT_PATH, setup_file_name, image)
-        results = eval(trainer, config)
+        results = eval(trainer)
         if(json_out is not None):
             save_json(results, json_out)
         if(img_out is not None):
