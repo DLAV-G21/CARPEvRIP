@@ -47,7 +47,6 @@ class LossKeypoints(nn.Module):
                 ), dim=2)
     
     def forward(self, predicted_keypoints, targeted_keypoints, scale, nb_cars):
-
         bs = targeted_keypoints.shape[0]
         num_targets = targeted_keypoints.shape[1] * targeted_keypoints.shape[2]
         

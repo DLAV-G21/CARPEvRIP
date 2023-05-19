@@ -31,11 +31,11 @@ def plot_and_save_keypoints_inference(image_folder, data, output_folder, scale):
               all_kps_coordinate=[]
               for i in range(nb_kps):
                 x,y,z = tuple(kps[i*3:(i+1)*3])
-                x *= img.shape[1]/scale[0]
-                y *= img.shape[2]/scale[1]
-                x= int(x)
-                y=int(y)
                 if z > 0:
+                  x *= img.shape[1]/scale[0]
+                  y *= img.shape[0]/scale[1]
+                  x= int(x)
+                  y = int(y)
                   all_found_kps.append(int(i+1))
                   all_kps_coordinate.append((x,y))
                 else:

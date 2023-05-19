@@ -22,10 +22,10 @@ class Head(nn.Module):
         self.nbr_variable = nbr_variable
 
         #Initializes random queries with size of nbr_points * nbr_max_car multiplied by the embedding size
-        self.queries = torch.nn.Parameter(torch.rand(
+        self.queries = torch.nn.Embedding(
             nbr_points * nbr_max_car,
             embed_size,
-        ))
+        )
 
         #Initializes a transformer decoder layer
         self.transformer_decoder = nn.TransformerDecoder(
@@ -48,7 +48,7 @@ class Head(nn.Module):
 
     def forward(self, x):
         #Expands the queries to match the size of x
-        query = self.queries.expand(x.shape[0], *self.queries.shape)
+        query = self.queries.weight.expand(x.shape[0], *self.queries.weight.shape)
         assert(torch.all(query[0]==query[1]))
         #Applies the transformer decoder
         output = self.transformer_decoder(query, x)

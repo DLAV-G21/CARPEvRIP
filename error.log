@@ -1,2 +1,2 @@
 Failed :
-(<class 'RuntimeError'>, RuntimeError('The size of tensor a (20) must match the size of tensor b (8) at non-singleton dimension 1'), <traceback object at 0x0000016CDB99BC00>)
+(<class 'TypeError'>, TypeError('Object of type float32 is not JSON serializable'), <traceback object at 0x000001786B758640>)

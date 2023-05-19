@@ -7,12 +7,12 @@ from .head import Head
 from .neck import Neck
 from .simple_neck import SimpleNeck
 from .decoder import Decoder
-
+import logging
 class Net(nn.Module):
     
     def __init__(self, config):
         super().__init__()
-
+        self.log = logging.getLogger("g21")
         self.name = config['name']
         self.epoch = 0
         self.best_result = -1
@@ -163,7 +163,7 @@ class Net(nn.Module):
                 pretrained = False
 
         if os.path.isfile(pretrained):
-            print('load :', pretrained)
+            self.log.info("Loading pretrained parameters from "+pretrained)
 
             pretrained_dict = torch.load(pretrained, map_location='cpu')
             
@@ -177,7 +177,7 @@ class Net(nn.Module):
 
             self.epoch = int(pretrained.split('model_')[-1][:-4])
         else:
-            print('init_weights')
+            self.log.info("Initialised the weights")
             if(pretrained is not False) and len(pretrained) > 0:
                 raise ValueError('The given pretrained model file doesn\'t exist :', pretrained)
             if not os.path.isfile(backbone_save):

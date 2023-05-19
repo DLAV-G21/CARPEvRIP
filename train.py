@@ -10,8 +10,11 @@ from builder import get_optimizer_from_arguments, get_lr_scheduler_from_argument
 from dataset import get_dataloaders
 from trainer import Trainer
 from torch.utils.tensorboard import SummaryWriter
+import logging
+import numpy as np
 
 def load(ROOT_PATH = '/home/plumey', setup_file_name ='dlav_config.json', override = False):
+    log = logging.getLogger("g21")
     if not os.path.isfile(setup_file_name):
         raise ValueError('config file does\'t exist :', setup_file_name)
     with open(setup_file_name) as setup_file:
@@ -26,8 +29,8 @@ def load(ROOT_PATH = '/home/plumey', setup_file_name ='dlav_config.json', overri
         timestamp = datetime.now().strftime('_%Y_%m_%d_%H_%M_%S')
         save += timestamp
         config['name'] += timestamp
-    print(f'name :',config['name'])
-    print(f'save :',save)
+    log.info("Name of the training: "+config['name'])
+    log.info("Save loaded "+ save)
 
     if not os.path.isdir(save):
         os.makedirs(save)
@@ -45,11 +48,17 @@ def load(ROOT_PATH = '/home/plumey', setup_file_name ='dlav_config.json', overri
     optimizer =      get_optimizer_from_arguments(config, model.parameters())
     lr_scheduler =   get_lr_scheduler_from_arguments(config, optimizer)
     device =         get_accelerator_device_from_args(config)
+    log.info("Loading the dataset...")
     train_loader, val_loader, _ = get_dataloaders(config, DATA_PATH)
     writer =  SummaryWriter(config['logging']['log_dir'])
     decoder = Decoder(threshold = config['decoder']['threshold'], max_distance = config['decoder']['max_distance'], nbr_max_car = config['dataset']['max_nb'], use_matcher = config['model']['use_matcher'], nb_keypoints = config['dataset']['nb_keypoints'])
-    
+
+    params = sum([np.prod(p.size()) for p in model.parameters()])
+
+    log.info(f"The model has {params} parameters.")
+
     model.to(device)
+    #model.half()
     trainer = Trainer(save, model, decoder, loss_keypoints, loss_links, optimizer, lr_scheduler, config['training']['clip_grad_value'], device, train_loader, val_loader, writer = writer)
 
     return trainer, config
@@ -67,6 +76,7 @@ def main(ROOT_PATH, setup_file_name, override,train_only, eval_only):
         f.write('Failed :\n'+ str(sys.exc_info()))
         f.close()
         """
+    logging.basicConfig(level=10)
     trainer, config = load(ROOT_PATH, setup_file_name, override)
     train(trainer, config, train_only=train_only, eval_only=eval_only)
     trainer.writer.close()
