@@ -22,15 +22,15 @@ class Head(nn.Module):
         self.nbr_points = nbr_points
         self.nbr_variable = nbr_variable
         #Sets the size of the embeddings to 256
-        embed_size = 512
+        embed_size = 256
         #Sets the size of the postion to 30
         position_size = 30
 
         #Initializes random queries with size of nbr_points * nbr_max_car multiplied by the embedding size
-        self.queries = torch.nn.Parameter(torch.rand(
+        self.queries = torch.nn.Embedding(
             nbr_points * nbr_max_car,
             embed_size,
-        ))
+        )
 
         #Sets a boolean for the positional encoding to true
         self.add_positional_encoding = add_positional_encoding
@@ -103,7 +103,7 @@ class Head(nn.Module):
             x = self.cat_positional_encoding(x)
 
         #Expands the queries to match the size of x
-        query = self.queries.expand(x.shape[0], *self.queries.shape)
+        query = self.queries.weight.expand(x.shape[0], *self.queries.weight.shape)
         assert(torch.all(query[0]==query[1]))
         #Applies the transformer decoder
         output = self.transformer_decoder(query, x)

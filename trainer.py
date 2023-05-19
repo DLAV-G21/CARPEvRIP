@@ -3,7 +3,7 @@ import time
 import os
 from tqdm import tqdm
 from utils.coco_evaluator import CocoEvaluator
-
+import logging
 class Trainer():
     epoch = None
 
@@ -53,7 +53,6 @@ class Trainer():
 
         # Iterate through the specified number of epochs
         for epoch_ in range(self.model.epoch, self.model.epoch + epoch):
-            print('epoch :', epoch_)
             if not eval_only:
                 # Perform the training step
                 self.train_step(self.train_data, self.writer, epoch_)
@@ -128,6 +127,7 @@ class Trainer():
                 writer.add_scalar('eval iteration time', end_time - start_time, epoch_ * epoch_len + i)
         
         # Print the number of skeletons found
+
         print('skeletons found :',skeletons_found)
         # If the coco evaluator is not None
         if coco_evaluator is not None:
@@ -152,8 +152,10 @@ class Trainer():
         self.model.train()
         # Get the length of the training data
         epoch_len = len(train_data)
+        pbar = tqdm(enumerate(train_data))
+        pbar.set_description(f"Epoch {epoch_} : loss=init")
         # Iterate through the training data
-        for i, (_, image, targeted_keypoints, scale, targeted_links, nb_cars) in tqdm(enumerate(train_data)):
+        for i, (_, image, targeted_keypoints, scale, targeted_links, nb_cars) in pbar:
             # If device is not cpu, move data to device
             if(self.device != 'cpu'):
                 image = image.to(self.device, non_blocking=True)
@@ -161,7 +163,7 @@ class Trainer():
                 targeted_links = targeted_links.to(self.device, non_blocking=True)
                 scale = scale.to(self.device, non_blocking=True)
                 nb_cars = nb_cars.to(self.device, non_blocking=True)
-            
+
             # Record the start time
             start_time = time.time()
             # Zero out all gradients
@@ -177,6 +179,7 @@ class Trainer():
             loss = loss_keypoints + loss_links
             # Backpropagate the loss
             loss.backward()
+            pbar.set_description(f"Epoch {epoch_} : loss={loss.item():.4f}")
                 
             # Clip gradients to a certain value
             torch.nn.utils.clip_grad_value_(self.model.parameters(), self.clip_grad_value)

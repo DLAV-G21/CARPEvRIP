@@ -234,13 +234,13 @@ class Decoder():
                     # Create the element object
                     element = {
                         'image_id' : image_id,
-                        'score' : np.exp(skeleton_probability),
+                        'score' : float(np.exp(skeleton_probability)),
                         'category_id': 1,
                         'iscrowd': 0,
                         'id': int(str(image_id)+str(id)) if isinstance(image_id, int) else f'{image_id}{id}', #ecivalen XD <3 : image_id*10**math.ceil(np.log10(id+1))+id
                         'bbox': [0,0,0,0],
                         'num_keypoints': len(skeleton),
-                        'keypoints': keypoints_,
+                        'keypoints': [float(k) for k in keypoints_],
                         'segmentation':[],
                     }
                     id+=1
@@ -282,7 +282,7 @@ class Decoder():
                     'id': image_id*10 if isinstance(image_id, int) else f'{image_id}{0}',
                     'bbox': [0,0,0,0],
                     'num_keypoints': 0,
-                    'keypoints': list(np.zeros(self.nb_keypoints*3)),
+                    'keypoints':  [float(k) for k in np.zeros(self.nb_keypoints*3)],
                     'segmentation':[],
                 }
 

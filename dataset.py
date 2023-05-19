@@ -12,6 +12,7 @@ import os
 import json
 from pycocotools.coco import COCO
 from PIL import Image
+import logging
 
 
 class ApolloInference(Dataset):
@@ -226,10 +227,11 @@ class ApolloDataset(Dataset):
     self.list_links = CAR_SKELETON_24 if config['dataset']['nb_keypoints'] == 24 else CAR_SKELETON_66
     
   def load_data(self,root_path, config,data_list):
+    log = logging.getLogger("g21")
     root_path = os.path.join(root_path, config["dataset"]["annotations_folder"])
     train_file = 'apollo_keypoints_'+str(config['dataset']['nb_keypoints'])+'_'+'train'+'.json'
     val_file = 'apollo_keypoints_'+str(config['dataset']['nb_keypoints'])+'_'+'val'+'.json'
-    print(os.path.join(root_path,train_file))
+    log.info("Loading training data from "+os.path.join(root_path,train_file))
     if os.path.exists(os.path.join(root_path,train_file)):
       with open(os.path.join(root_path,train_file), 'r') as f:
         data_file = json.load(f)
