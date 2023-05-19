@@ -6,3 +6,4 @@ dlav_data/segm_npz/*
 model/model_saves/*
 model/hrformer/modules/__pycache__/*
 log_dir/**
+*.zip

@@ -41,7 +41,7 @@ class SimpleNeck(nn.Module):
         dtype = x.dtype
         list_ = [x]
 
-        for i in range((self.neck_size - self.cat_size)//2):
+        for i in range(1,1+(self.embed_size - self.cat_size)//2):
             #Creates a tensor with the range of x's shape[2]
             x_  = torch.tensor([(j//i) for j in range(x.shape[2])], dtype=dtype, device=device).expand(x.shape[0],1,x.shape[3],x.shape[2]).permute(0,1,3,2)
             #Creates a tensor with the range of x's shape[3]
@@ -58,5 +58,6 @@ class SimpleNeck(nn.Module):
         for i in range(1,len(x)):
             y = torch.cat((self.pool(y),x[i]),dim=1)
         y = self.cat_positional_encoding(y)
+        y = y.permute(0,2,1)
         y = self.transformer_ecoder(y)
         return y

@@ -63,7 +63,7 @@ def load(ROOT_PATH = '/home/plumey', setup_file_name ='dlav_config.json', overri
 
     return trainer, config
 
-def train(trainer, config,train_only,eval_only):
+def train(trainer, config,train_only=False,eval_only=False):
     trainer.train(epoch = config['training']['epochs'],train_only=train_only,eval_only=eval_only)
 
 def main(ROOT_PATH, setup_file_name, override,train_only, eval_only):
