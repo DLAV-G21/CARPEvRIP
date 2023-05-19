@@ -1,13 +1,12 @@
 {
-	"name": "baseline_with_matcher_train_backbone",
+	"name": "baseline_ED",
 	"model": {
 		"backbone_save": "model/model_saves/hrt_small_coco_384x288.pth",
 		"model_saves": "model/model_saves",
 		"bn_momentum": 0.1,
 		"decode_output": false,
-		"add_positional_encoding": true,
 		"nhead": 4,
-		"num_layers": 6,
+		"num_layers": 3,
 		"use_matcher": true,
 		"simple_neck": true
 	},
